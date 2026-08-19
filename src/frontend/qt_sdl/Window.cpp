@@ -46,6 +46,7 @@
 #include "CheatsDialog.h"
 #include "DateTimeDialog.h"
 #include "EmuSettingsDialog.h"
+#include "SettingsHubDialog.h"
 #include "InputConfig/InputConfigDialog.h"
 #include "VideoSettingsDialog.h"
 #include "CameraSettingsDialog.h"
@@ -578,8 +579,12 @@ MainWindow::MainWindow(int id, EmuInstance* inst, QWidget* parent) :
         {
             QMenu * menu = menubar->addMenu("Config");
 
+            actSettingsHub = menu->addAction("Settings...");
+            connect(actSettingsHub, &QAction::triggered, this, &MainWindow::onOpenSettingsHub);
+
             actEmuSettings = menu->addAction("Emu settings");
             connect(actEmuSettings, &QAction::triggered, this, &MainWindow::onOpenEmuSettings);
+            menu->removeAction(actEmuSettings);
 
 #ifdef __APPLE__
             actPreferences = menu->addAction("Preferences...");
@@ -589,30 +594,39 @@ MainWindow::MainWindow(int id, EmuInstance* inst, QWidget* parent) :
 
             actInputConfig = menu->addAction("Input and hotkeys");
             connect(actInputConfig, &QAction::triggered, this, &MainWindow::onOpenInputConfig);
+            menu->removeAction(actInputConfig);
 
             actVideoSettings = menu->addAction("Video settings");
             connect(actVideoSettings, &QAction::triggered, this, &MainWindow::onOpenVideoSettings);
+            menu->removeAction(actVideoSettings);
 
             actCameraSettings = menu->addAction("Camera settings");
             connect(actCameraSettings, &QAction::triggered, this, &MainWindow::onOpenCameraSettings);
+            menu->removeAction(actCameraSettings);
 
             actAudioSettings = menu->addAction("Audio settings");
             connect(actAudioSettings, &QAction::triggered, this, &MainWindow::onOpenAudioSettings);
+            menu->removeAction(actAudioSettings);
 
             actMPSettings = menu->addAction("Multiplayer settings");
             connect(actMPSettings, &QAction::triggered, this, &MainWindow::onOpenMPSettings);
+            menu->removeAction(actMPSettings);
 
             actWifiSettings = menu->addAction("Wifi settings");
             connect(actWifiSettings, &QAction::triggered, this, &MainWindow::onOpenWifiSettings);
+            menu->removeAction(actWifiSettings);
 
             actFirmwareSettings = menu->addAction("Firmware settings");
             connect(actFirmwareSettings, &QAction::triggered, this, &MainWindow::onOpenFirmwareSettings);
+            menu->removeAction(actFirmwareSettings);
 
             actInterfaceSettings = menu->addAction("Interface settings");
             connect(actInterfaceSettings, &QAction::triggered, this, &MainWindow::onOpenInterfaceSettings);
+            menu->removeAction(actInterfaceSettings);
 
             actPathSettings = menu->addAction("Path settings");
             connect(actPathSettings, &QAction::triggered, this, &MainWindow::onOpenPathSettings);
+            menu->removeAction(actPathSettings);
 
             menu->addSeparator();
 
@@ -1802,6 +1816,44 @@ bool MainWindow::lanWarning(bool host)
 
     deleteAllEmuInstances(1);
     return true;
+}
+
+void MainWindow::onOpenSettingsHub()
+{
+    SettingsHubDialog* hub = new SettingsHubDialog(this);
+    hub->setAttribute(Qt::WA_DeleteOnClose);
+
+    hub->addCategory("Emu settings");
+    hub->addCategory("Input and hotkeys");
+    hub->addCategory("Video settings");
+    hub->addCategory("Camera settings");
+    hub->addCategory("Audio settings");
+    hub->addCategory("Multiplayer settings");
+    hub->addCategory("Wifi settings");
+    hub->addCategory("Firmware settings");
+    hub->addCategory("Interface settings");
+    hub->addCategory("Path settings");
+
+    connect(hub, &SettingsHubDialog::categorySelected, this, &MainWindow::onSettingsHubCategory);
+
+    hub->open();
+}
+
+void MainWindow::onSettingsHubCategory(int index)
+{
+    switch (index)
+    {
+        case 0: onOpenEmuSettings(); break;
+        case 1: onOpenInputConfig(); break;
+        case 2: onOpenVideoSettings(); break;
+        case 3: onOpenCameraSettings(); break;
+        case 4: onOpenAudioSettings(); break;
+        case 5: onOpenMPSettings(); break;
+        case 6: onOpenWifiSettings(); break;
+        case 7: onOpenFirmwareSettings(); break;
+        case 8: onOpenInterfaceSettings(); break;
+        case 9: onOpenPathSettings(); break;
+    }
 }
 
 void MainWindow::onOpenEmuSettings()
