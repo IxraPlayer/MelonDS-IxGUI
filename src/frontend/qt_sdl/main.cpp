@@ -341,7 +341,11 @@ int main(int argc, char** argv)
     if (translator.load(":/translations/melonDS_" + langCode + ".qm"))
         melon.installTranslator(&translator);
 
-    QFile styleFile(":/dark_glass");
+    QString uiTheme = Config::GetGlobalTable().GetQString("UITheme");
+    if (uiTheme != "dark_glass" && uiTheme != "neo_modern")
+        uiTheme = "dark_glass";
+
+    QFile styleFile(":/" + uiTheme);
     if (styleFile.open(QFile::ReadOnly | QFile::Text))
     {
         QTextStream styleStream(&styleFile);
