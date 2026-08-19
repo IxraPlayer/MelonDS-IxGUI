@@ -70,6 +70,8 @@ private slots:
     void on_pbHalf_clicked();
     void on_pbQuarter_clicked();
 
+    void on_cbxUILanguage_currentIndexChanged(int index);
+
 private:
     Ui::InterfaceSettingsDialog* ui;
 

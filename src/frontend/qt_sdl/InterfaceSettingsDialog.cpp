@@ -56,6 +56,23 @@ InterfaceSettingsDialog::InterfaceSettingsDialog(QWidget* parent) : QDialog(pare
         if (!cfgTheme.isEmpty() && themeKeys[i].compare(currentTheme, Qt::CaseInsensitive) == 0)
             ui->cbxUITheme->setCurrentIndex(i + 1);
     }
+
+    // Available UI languages. "" (System default) uses the OS locale, like before.
+    // Add new entries here whenever a new translations/melonDS_XX.ts is added.
+    static const QList<QPair<QString, QString>> languages = {
+        { QObject::tr("System default"), "" },
+        { QStringLiteral("English"),      "en" },
+        { QStringLiteral("Türkçe"),       "tr" },
+    };
+
+    QString cfgLang = cfg.GetQString("Language");
+
+    for (int i = 0; i < languages.length(); i++)
+    {
+        ui->cbxUILanguage->addItem(languages[i].first, languages[i].second);
+        if (languages[i].second == cfgLang)
+            ui->cbxUILanguage->setCurrentIndex(i);
+    }
 }
 
 InterfaceSettingsDialog::~InterfaceSettingsDialog()
@@ -103,6 +120,13 @@ void InterfaceSettingsDialog::on_pbQuarter_clicked()
     ui->spinSlow->setValue(ui->spinTargetFPS->value() / 4.0);
 }
 
+void InterfaceSettingsDialog::on_cbxUILanguage_currentIndexChanged(int index)
+{
+    Q_UNUSED(index);
+    // Language changes only take effect after restarting melonDS.
+    ui->lblLanguageNote->setVisible(true);
+}
+
 void InterfaceSettingsDialog::done(int r)
 {
     if (!((MainWindow*)parent())->getEmuInstance())
@@ -135,6 +159,9 @@ void InterfaceSettingsDialog::done(int r)
 
         QString themeName = ui->cbxUITheme->currentData().toString();
         cfg.SetQString("UITheme", themeName);
+
+        QString langCode = ui->cbxUILanguage->currentData().toString();
+        cfg.SetQString("Language", langCode);
 
         Config::Save();
 
