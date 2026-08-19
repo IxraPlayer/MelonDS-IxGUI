@@ -38,6 +38,8 @@
 #include <QStandardPaths>
 #include <QTranslator>
 #include <QLocale>
+#include <QFile>
+#include <QTextStream>
 #ifndef _WIN32
 #include <QGuiApplication>
 #include <QSocketNotifier>
@@ -338,6 +340,14 @@ int main(int argc, char** argv)
     QTranslator translator;
     if (translator.load(":/translations/melonDS_" + langCode + ".qm"))
         melon.installTranslator(&translator);
+
+    QFile styleFile(":/dark_glass");
+    if (styleFile.open(QFile::ReadOnly | QFile::Text))
+    {
+        QTextStream styleStream(&styleFile);
+        melon.setStyleSheet(styleStream.readAll());
+        styleFile.close();
+    }
 
     pathInit();
 
