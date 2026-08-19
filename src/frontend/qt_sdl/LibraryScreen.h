@@ -6,6 +6,7 @@
 #include <QToolButton>
 #include <QStringList>
 #include <QMap>
+#include <QIcon>
 
 class LibraryScreen : public QWidget
 {
@@ -25,6 +26,7 @@ signals:
 private:
     void relayout();
     QString displayName(const QString& path) const;
+    QIcon loadRomIcon(const QString& path) const;
 
     QGridLayout* grid;
     QToolButton* addTile;

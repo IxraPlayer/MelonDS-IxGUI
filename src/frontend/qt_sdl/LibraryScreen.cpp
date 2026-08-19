@@ -3,6 +3,14 @@
 #include <QScrollArea>
 #include <QVBoxLayout>
 #include <QMenu>
+#include <QFile>
+#include <QImage>
+#include <QPixmap>
+#include <cstddef>
+
+#include "NDS_Header.h"
+
+using namespace melonDS;
 
 LibraryScreen::LibraryScreen(QWidget* parent) : QWidget(parent), columns(5)
 {
@@ -39,6 +47,69 @@ QString LibraryScreen::displayName(const QString& path) const
     return name;
 }
 
+QIcon LibraryScreen::loadRomIcon(const QString& path) const
+{
+    // Archive entries ("archive.zip|game.nds") aren't supported for icon
+    // extraction yet; fall back to text-only tiles for those.
+    if (path.contains('|'))
+        return QIcon();
+
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly))
+        return QIcon();
+
+    NDSHeader header;
+    if (file.read(reinterpret_cast<char*>(&header), sizeof(header)) != (qint64)sizeof(header))
+        return QIcon();
+
+    if (header.BannerOffset == 0)
+        return QIcon();
+
+    u8 iconData[512];
+    u16 palette[16];
+
+    if (!file.seek(header.BannerOffset + offsetof(NDSBanner, Icon)))
+        return QIcon();
+    if (file.read(reinterpret_cast<char*>(iconData), sizeof(iconData)) != (qint64)sizeof(iconData))
+        return QIcon();
+
+    if (!file.seek(header.BannerOffset + offsetof(NDSBanner, Palette)))
+        return QIcon();
+    if (file.read(reinterpret_cast<char*>(palette), sizeof(palette)) != (qint64)sizeof(palette))
+        return QIcon();
+
+    u32 paletteRGBA[16];
+    for (int i = 0; i < 16; i++)
+    {
+        u8 r = ((palette[i] >> 0)  & 0x1F) * 255 / 31;
+        u8 g = ((palette[i] >> 5)  & 0x1F) * 255 / 31;
+        u8 b = ((palette[i] >> 10) & 0x1F) * 255 / 31;
+        u8 a = i ? 255 : 0;
+        paletteRGBA[i] = r | (g << 8) | (b << 16) | (a << 24);
+    }
+
+    u32 iconRGBA[32 * 32];
+    int count = 0;
+    for (int ytile = 0; ytile < 4; ytile++)
+    {
+        for (int xtile = 0; xtile < 4; xtile++)
+        {
+            for (int ypixel = 0; ypixel < 8; ypixel++)
+            {
+                for (int xpixel = 0; xpixel < 8; xpixel++)
+                {
+                    u8 pal_index = count % 2 ? iconData[count / 2] >> 4 : iconData[count / 2] & 0x0F;
+                    iconRGBA[ytile * 256 + ypixel * 32 + xtile * 8 + xpixel] = paletteRGBA[pal_index];
+                    count++;
+                }
+            }
+        }
+    }
+
+    QImage img(reinterpret_cast<uchar*>(iconRGBA), 32, 32, QImage::Format_RGBA8888);
+    return QIcon(QPixmap::fromImage(img.copy()));
+}
+
 void LibraryScreen::addGame(const QString& path)
 {
     if (paths.contains(path))
@@ -52,6 +123,13 @@ void LibraryScreen::addGame(const QString& path)
     tile->setFixedSize(140, 140);
     tile->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
     tile->setContextMenuPolicy(Qt::CustomContextMenu);
+
+    QIcon icon = loadRomIcon(path);
+    if (!icon.isNull())
+    {
+        tile->setIcon(icon);
+        tile->setIconSize(QSize(64, 64));
+    }
 
     connect(tile, &QToolButton::clicked, this, [this, path]()
     {
