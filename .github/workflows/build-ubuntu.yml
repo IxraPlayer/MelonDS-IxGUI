@@ -34,8 +34,10 @@ jobs:
       name: Check out sources
     - name: Install dependencies
       run: |
-        sudo apt update
-        sudo apt install --allow-downgrades cmake ninja-build extra-cmake-modules libpcap0.8-dev libsdl2-dev libenet-dev \
+        sudo sed -i 's/azure.archive.ubuntu.com/archive.ubuntu.com/g' /etc/apt/sources.list
+        sudo sed -i 's/azure.archive.ubuntu.com/archive.ubuntu.com/g' /etc/apt/sources.list.d/* 2>/dev/null || true
+        sudo apt-get update -o Acquire::http::Timeout="10" -o Acquire::https::Timeout="10"
+        sudo apt-get install -y --allow-downgrades cmake ninja-build extra-cmake-modules libpcap0.8-dev libsdl2-dev libenet-dev \
           qt6-{base,base-private,multimedia}-dev qt6-wayland libqt6svg6-dev libarchive-dev libzstd-dev libfuse2 libfaad-dev \
           qt6-l10n-tools qt6-tools-dev-tools
     - name: Configure
