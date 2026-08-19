@@ -41,6 +41,8 @@
 #include <QVector>
 #include <QCommandLineParser>
 #include <QDesktopServices>
+#include <QDir>
+#include <QCheckBox>
 
 #include "main.h"
 #include "CheatsDialog.h"
@@ -1354,12 +1356,70 @@ void MainWindow::onLibraryAddGameRequested()
     if (file.isEmpty())
         return;
 
-    QString path = file.join('|');
+    QString installedPath = installGameToLibrary(file);
+    QString path = !installedPath.isEmpty() ? installedPath : file.join('|');
+
     library->addGame(path);
 
     saveLibraryToConfig();
 
     onLibraryGameActivated(path);
+}
+
+QString MainWindow::installGameToLibrary(const QStringList& file)
+{
+    // Archive entries ("archive.zip|game.nds") stay where they are; we can't
+    // meaningfully "install" a ROM that lives inside an archive.
+    if (file.size() != 1)
+        return QString();
+
+    QString srcPath = file.first();
+    QFileInfo srcInfo(srcPath);
+
+    QString gamesDirPath = QString::fromStdString(Platform::GetLocalFilePath("games"));
+    QDir gamesDir(gamesDirPath);
+    if (!gamesDir.exists() && !gamesDir.mkpath("."))
+        return QString();
+
+    // Already installed (e.g. re-adding a game already in the games folder).
+    if (QDir::cleanPath(srcInfo.absoluteFilePath()) == QDir::cleanPath(gamesDir.filePath(srcInfo.fileName())))
+        return srcInfo.absoluteFilePath();
+
+    QString destPath = gamesDir.filePath(srcInfo.fileName());
+    if (QFile::exists(destPath))
+    {
+        // A file with this name is already installed; assume it's the same
+        // game and just point the library at it instead of overwriting.
+        return destPath;
+    }
+
+    if (!QFile::copy(srcPath, destPath))
+        return QString();
+
+    bool suppressPrompt = globalCfg.GetBool("Library.SuppressDeletePrompt");
+    if (!suppressPrompt)
+    {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Question);
+        box.setWindowTitle("Game installed");
+        box.setText("\"" + srcInfo.fileName() + "\" has been installed to your library.\n\n"
+                     "Delete the original file to save disk space?");
+        box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        box.setDefaultButton(QMessageBox::No);
+
+        QCheckBox* dontAskAgain = new QCheckBox("Don't show this message again");
+        box.setCheckBox(dontAskAgain);
+
+        int result = box.exec();
+
+        if (dontAskAgain->isChecked())
+            globalCfg.SetBool("Library.SuppressDeletePrompt", true);
+
+        if (result == QMessageBox::Yes)
+            QFile::remove(srcPath);
+    }
+
+    return destPath;
 }
 
 void MainWindow::saveLibraryToConfig()

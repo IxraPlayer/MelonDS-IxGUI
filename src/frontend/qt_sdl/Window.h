@@ -204,6 +204,7 @@ private:
     bool verifySetup();
     QString pickFileFromArchive(QString archiveFileName);
     QStringList pickROM(bool gba);
+    QString installGameToLibrary(const QStringList& file);
     void updateCartInserted(bool gba);
 
     void createScreenPanel();
