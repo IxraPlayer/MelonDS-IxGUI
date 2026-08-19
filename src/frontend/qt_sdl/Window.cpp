@@ -2060,46 +2060,39 @@ bool MainWindow::lanWarning(bool host)
 
 void MainWindow::onOpenSettingsHub()
 {
-    settingsHub = new SettingsHubDialog(this);
-    settingsHub->setAttribute(Qt::WA_DeleteOnClose);
-    connect(settingsHub, &QObject::destroyed, this, [this]() { settingsHub = nullptr; });
+    SettingsHubDialog* hub = new SettingsHubDialog(this);
+    hub->setAttribute(Qt::WA_DeleteOnClose);
 
-    settingsHub->addCategory("Emu settings");
-    settingsHub->addCategory("Input and hotkeys");
-    settingsHub->addCategory("Video settings");
-    settingsHub->addCategory("Camera settings");
-    settingsHub->addCategory("Audio settings");
-    settingsHub->addCategory("Multiplayer settings");
-    settingsHub->addCategory("Wifi settings");
-    settingsHub->addCategory("Firmware settings");
-    settingsHub->addCategory("Interface settings");
-    settingsHub->addCategory("Path settings");
+    hub->addCategory("Emu settings");
+    hub->addCategory("Input and hotkeys");
+    hub->addCategory("Video settings");
+    hub->addCategory("Camera settings");
+    hub->addCategory("Audio settings");
+    hub->addCategory("Multiplayer settings");
+    hub->addCategory("Wifi settings");
+    hub->addCategory("Firmware settings");
+    hub->addCategory("Interface settings");
+    hub->addCategory("Path settings");
 
-    connect(settingsHub, &SettingsHubDialog::categorySelected, this, &MainWindow::onSettingsHubCategory);
+    connect(hub, &SettingsHubDialog::categorySelected, this, &MainWindow::onSettingsHubCategory);
 
-    settingsHub->open();
+    hub->open();
 }
 
 void MainWindow::onSettingsHubCategory(int index)
 {
-    if (!settingsHub)
-        return;
-
-    // These dialogs are still QDialog-derived (singletons via openDlg), but
-    // setPage() strips their top-level window flags and embeds them into the
-    // hub's right-hand panel instead of letting them float as separate windows.
     switch (index)
     {
-        case 0: settingsHub->setPage(EmuSettingsDialog::openDlg(settingsHub)); break;
-        case 1: settingsHub->setPage(InputConfigDialog::openDlg(settingsHub)); break;
-        case 2: settingsHub->setPage(VideoSettingsDialog::openDlg(settingsHub)); break;
-        case 3: settingsHub->setPage(CameraSettingsDialog::openDlg(settingsHub)); break;
-        case 4: settingsHub->setPage(AudioSettingsDialog::openDlg(settingsHub)); break;
-        case 5: settingsHub->setPage(MPSettingsDialog::openDlg(settingsHub)); break;
-        case 6: settingsHub->setPage(WifiSettingsDialog::openDlg(settingsHub)); break;
-        case 7: settingsHub->setPage(FirmwareSettingsDialog::openDlg(settingsHub)); break;
-        case 8: settingsHub->setPage(InterfaceSettingsDialog::openDlg(settingsHub)); break;
-        case 9: settingsHub->setPage(PathSettingsDialog::openDlg(settingsHub)); break;
+        case 0: onOpenEmuSettings(); break;
+        case 1: onOpenInputConfig(); break;
+        case 2: onOpenVideoSettings(); break;
+        case 3: onOpenCameraSettings(); break;
+        case 4: onOpenAudioSettings(); break;
+        case 5: onOpenMPSettings(); break;
+        case 6: onOpenWifiSettings(); break;
+        case 7: onOpenFirmwareSettings(); break;
+        case 8: onOpenInterfaceSettings(); break;
+        case 9: onOpenPathSettings(); break;
     }
 }
 
