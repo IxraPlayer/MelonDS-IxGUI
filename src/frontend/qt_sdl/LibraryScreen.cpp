@@ -51,7 +51,6 @@ void LibraryScreen::addGame(const QString& path)
     tile->setText(displayName(path));
     tile->setFixedSize(140, 140);
     tile->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-    tile->setWordWrap(true);
     tile->setContextMenuPolicy(Qt::CustomContextMenu);
 
     connect(tile, &QToolButton::clicked, this, [this, path]()
