@@ -2,6 +2,7 @@
 #include <QFileInfo>
 #include <QScrollArea>
 #include <QVBoxLayout>
+#include <QMenu>
 
 LibraryScreen::LibraryScreen(QWidget* parent) : QWidget(parent), columns(5)
 {
@@ -51,19 +52,46 @@ void LibraryScreen::addGame(const QString& path)
     tile->setFixedSize(140, 140);
     tile->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
     tile->setWordWrap(true);
+    tile->setContextMenuPolicy(Qt::CustomContextMenu);
+
     connect(tile, &QToolButton::clicked, this, [this, path]()
     {
         emit romActivated(path);
     });
 
-    int index = grid->count() - 1;
-    grid->removeWidget(addTile);
-    grid->addWidget(tile, index / columns, index % columns);
+    connect(tile, &QToolButton::customContextMenuRequested, this, [this, tile, path](const QPoint& pos)
+    {
+        QMenu menu(tile);
+        QAction* removeAct = menu.addAction("Remove from library");
+        QAction* chosen = menu.exec(tile->mapToGlobal(pos));
+        if (chosen == removeAct)
+        {
+            paths.removeAll(path);
+            tiles.remove(path);
+            tile->deleteLater();
+            relayout();
+            emit libraryChanged();
+        }
+    });
 
-    int newIndex = grid->count();
-    grid->addWidget(addTile, newIndex / columns, newIndex % columns);
+    tiles.insert(path, tile);
+    relayout();
 }
 
 void LibraryScreen::relayout()
 {
+    grid->removeWidget(addTile);
+
+    int index = 0;
+    for (const QString& path : paths)
+    {
+        QToolButton* tile = tiles.value(path, nullptr);
+        if (!tile) continue;
+
+        grid->removeWidget(tile);
+        grid->addWidget(tile, index / columns, index % columns);
+        index++;
+    }
+
+    grid->addWidget(addTile, index / columns, index % columns);
 }

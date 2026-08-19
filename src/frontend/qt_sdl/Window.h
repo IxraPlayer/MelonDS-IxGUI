@@ -145,6 +145,7 @@ private slots:
     void onSettingsHubCategory(int index);
     void onLibraryGameActivated(QString path);
     void onLibraryAddGameRequested();
+    void saveLibraryToConfig();
     void onOpenInputConfig();
     void onInputConfigFinished(int res);
     void onOpenVideoSettings();

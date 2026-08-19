@@ -17,6 +17,8 @@
 */
 
 #include <QStyleFactory>
+#include <QFile>
+#include <QTextStream>
 #include "InterfaceSettingsDialog.h"
 #include "ui_InterfaceSettingsDialog.h"
 
@@ -56,6 +58,14 @@ InterfaceSettingsDialog::InterfaceSettingsDialog(QWidget* parent) : QDialog(pare
         if (!cfgTheme.isEmpty() && themeKeys[i].compare(currentTheme, Qt::CaseInsensitive) == 0)
             ui->cbxUITheme->setCurrentIndex(i + 1);
     }
+
+    QString cfgQSSTheme = cfg.GetQString("UIQSSTheme");
+    ui->cbxQSSTheme->addItem("Dark Glass", "dark_glass");
+    ui->cbxQSSTheme->addItem("Neo Modern", "neo_modern");
+    if (cfgQSSTheme == "neo_modern")
+        ui->cbxQSSTheme->setCurrentIndex(1);
+    else
+        ui->cbxQSSTheme->setCurrentIndex(0);
 
     // Available UI languages. "" (System default) uses the OS locale, like before.
     // Add new entries here whenever a new translations/melonDS_XX.ts is added.
@@ -160,6 +170,9 @@ void InterfaceSettingsDialog::done(int r)
         QString themeName = ui->cbxUITheme->currentData().toString();
         cfg.SetQString("UITheme", themeName);
 
+        QString qssThemeName = ui->cbxQSSTheme->currentData().toString();
+        cfg.SetQString("UIQSSTheme", qssThemeName);
+
         QString langCode = ui->cbxUILanguage->currentData().toString();
         cfg.SetQString("Language", langCode);
 
@@ -169,6 +182,16 @@ void InterfaceSettingsDialog::done(int r)
             qApp->setStyle(themeName);
         else
             qApp->setStyle(*systemThemeName);
+
+        {
+            QFile qssFile(":/" + qssThemeName);
+            if (qssFile.open(QFile::ReadOnly | QFile::Text))
+            {
+                QTextStream qssStream(&qssFile);
+                qApp->setStyleSheet(qssStream.readAll());
+                qssFile.close();
+            }
+        }
 
         emit updateInterfaceSettings();
     }

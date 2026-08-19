@@ -47,6 +47,23 @@
        </layout>
       </item>
       <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_panelTheme">
+        <item>
+         <widget class="QLabel" name="label_panelTheme">
+          <property name="text">
+           <string>Panel theme</string>
+          </property>
+          <property name="buddy">
+           <cstring>cbxQSSTheme</cstring>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="cbxQSSTheme"/>
+        </item>
+       </layout>
+      </item>
+      <item>
        <layout class="QHBoxLayout" name="horizontalLayout_lang">
         <item>
          <widget class="QLabel" name="label_lang">

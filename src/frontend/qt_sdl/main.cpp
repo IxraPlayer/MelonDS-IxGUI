@@ -341,7 +341,7 @@ int main(int argc, char** argv)
     if (translator.load(":/translations/melonDS_" + langCode + ".qm"))
         melon.installTranslator(&translator);
 
-    QString uiTheme = Config::GetGlobalTable().GetQString("UITheme");
+    QString uiTheme = Config::GetGlobalTable().GetQString("UIQSSTheme");
     if (uiTheme != "dark_glass" && uiTheme != "neo_modern")
         uiTheme = "dark_glass";
 

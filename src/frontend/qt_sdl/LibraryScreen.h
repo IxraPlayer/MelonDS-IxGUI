@@ -5,6 +5,7 @@
 #include <QGridLayout>
 #include <QToolButton>
 #include <QStringList>
+#include <QMap>
 
 class LibraryScreen : public QWidget
 {
@@ -19,6 +20,7 @@ public:
 signals:
     void romActivated(QString path);
     void addGameRequested();
+    void libraryChanged();
 
 private:
     void relayout();
@@ -27,6 +29,7 @@ private:
     QGridLayout* grid;
     QToolButton* addTile;
     QStringList paths;
+    QMap<QString, QToolButton*> tiles;
     int columns;
 };
 

@@ -875,6 +875,7 @@ void MainWindow::createScreenPanel()
         centralStack->addWidget(library);
         connect(library, &LibraryScreen::romActivated, this, &MainWindow::onLibraryGameActivated);
         connect(library, &LibraryScreen::addGameRequested, this, &MainWindow::onLibraryAddGameRequested);
+        connect(library, &LibraryScreen::libraryChanged, this, &MainWindow::saveLibraryToConfig);
 
         Config::Array libROMs = globalCfg.GetArray("UILibrary");
         for (int i = 0; i < (int)libROMs.Size(); i++)
@@ -1356,14 +1357,19 @@ void MainWindow::onLibraryAddGameRequested()
     QString path = file.join('|');
     library->addGame(path);
 
+    saveLibraryToConfig();
+
+    onLibraryGameActivated(path);
+}
+
+void MainWindow::saveLibraryToConfig()
+{
     Config::Array libROMs = globalCfg.GetArray("UILibrary");
     libROMs.Clear();
     QStringList all = library->gamePaths();
     for (int i = 0; i < all.size(); i++)
         libROMs.SetQString(i, all.at(i));
     Config::Save();
-
-    onLibraryGameActivated(path);
 }
 
 void MainWindow::onLibraryGameActivated(QString path)
