@@ -97,16 +97,20 @@ add_executable(melonDS ${SOURCES_QT_SDL})
 add_subdirectory("../../net"
     ${CMAKE_BINARY_DIR}/net)
 
-find_package(Qt6 COMPONENTS LinguistTools REQUIRED)
+find_package(Qt6 COMPONENTS LinguistTools QUIET)
 
-set(TS_FILES
-    translations/melonDS_tr.ts
-)
+if (Qt6LinguistTools_FOUND)
+    set(TS_FILES
+        translations/melonDS_tr.ts
+    )
 
-qt6_add_translations(melonDS
-    TS_FILES ${TS_FILES}
-    RESOURCE_PREFIX "/translations"
-)
+    qt6_add_translations(melonDS
+        TS_FILES ${TS_FILES}
+        RESOURCE_PREFIX "/translations"
+    )
+else()
+    message(WARNING "Qt6 LinguistTools not found; translations will not be built. Install the LinguistTools component (e.g. 'qt6-l10n-tools' on Debian/Ubuntu) to enable them.")
+endif()
 
 target_link_libraries(melonDS PRIVATE net-utils)
 
