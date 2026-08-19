@@ -377,11 +377,19 @@ QProgressBar::chunk {
     background-color: #1a1d25;
     border: 1px solid #262b36;
     border-radius: 20px;
+    color: #e6e8ee;
+    font-weight: 600;
+    padding-top: 8px;
 }
 
 #gameCard:hover {
     background-color: #21252f;
     border: 1px solid #3d5afe;
+}
+
+#gameCard:pressed {
+    background-color: #262b3c;
+    border: 1px solid #6c85ff;
 }
 
 #gameCardTitle {
@@ -393,6 +401,27 @@ QProgressBar::chunk {
 #gameCardSubtitle {
     color: #7d8494;
     font-size: 11px;
+}
+
+#addGameTile {
+    background-color: transparent;
+    border: 2px dashed #2a2e3a;
+    border-radius: 20px;
+    color: #565b68;
+    font-size: 34px;
+    font-weight: 300;
+}
+
+#addGameTile:hover {
+    border: 2px dashed #3d5afe;
+    color: #5c74ff;
+    background-color: #161821;
+}
+
+#addGameTile:pressed {
+    border: 2px solid #6c85ff;
+    color: #6c85ff;
+    background-color: #1e2130;
 }
 
 #playButton {

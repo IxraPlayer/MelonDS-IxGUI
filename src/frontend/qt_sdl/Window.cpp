@@ -47,6 +47,7 @@
 #include "DateTimeDialog.h"
 #include "EmuSettingsDialog.h"
 #include "SettingsHubDialog.h"
+#include "LibraryScreen.h"
 #include "InputConfig/InputConfigDialog.h"
 #include "VideoSettingsDialog.h"
 #include "CameraSettingsDialog.h"
@@ -866,7 +867,30 @@ void MainWindow::createScreenPanel()
         panel = panelNative;
         panel->show();
     }
-    setCentralWidget(panel);
+    if (!centralStack)
+    {
+        centralStack = new QStackedWidget(this);
+
+        library = new LibraryScreen(this);
+        centralStack->addWidget(library);
+        connect(library, &LibraryScreen::romActivated, this, &MainWindow::onLibraryGameActivated);
+        connect(library, &LibraryScreen::addGameRequested, this, &MainWindow::onLibraryAddGameRequested);
+
+        Config::Array libROMs = globalCfg.GetArray("UILibrary");
+        for (int i = 0; i < (int)libROMs.Size(); i++)
+        {
+            std::string item = libROMs.GetString(i);
+            if (!item.empty())
+                library->addGame(QString::fromStdString(item));
+        }
+
+        setCentralWidget(centralStack);
+    }
+
+    if (centralStack->indexOf(panel) < 0)
+        centralStack->addWidget(panel);
+
+    centralStack->setCurrentWidget(showingLibrary ? (QWidget*)library : (QWidget*)panel);
 
     if (hasMenu)
         actScreenFiltering->setEnabled(hasOGL);
@@ -1318,6 +1342,49 @@ void MainWindow::updateCartInserted(bool gba)
             win->actRAMInfo->setEnabled(inserted);
         });
     }
+}
+
+void MainWindow::onLibraryAddGameRequested()
+{
+    if (!verifySetup())
+        return;
+
+    QStringList file = pickROM(false);
+    if (file.isEmpty())
+        return;
+
+    QString path = file.join('|');
+    library->addGame(path);
+
+    Config::Array libROMs = globalCfg.GetArray("UILibrary");
+    libROMs.Clear();
+    QStringList all = library->gamePaths();
+    for (int i = 0; i < all.size(); i++)
+        libROMs.SetQString(i, all.at(i));
+    Config::Save();
+
+    onLibraryGameActivated(path);
+}
+
+void MainWindow::onLibraryGameActivated(QString path)
+{
+    if (!verifySetup())
+        return;
+
+    QStringList file = path.split('|');
+
+    QString errorstr;
+    if (!emuThread->bootROM(file, errorstr))
+    {
+        QMessageBox::critical(this, "melonDS", errorstr);
+        return;
+    }
+
+    recentFileList.removeAll(path);
+    recentFileList.prepend(path);
+    updateRecentFilesMenu();
+
+    updateCartInserted(false);
 }
 
 void MainWindow::onOpenFile()
@@ -2253,6 +2320,9 @@ void MainWindow::onScreenEmphasisToggled()
 
 void MainWindow::onEmuStart()
 {
+    showingLibrary = false;
+    if (centralStack) centralStack->setCurrentWidget(panel);
+
     if (!hasMenu) return;
 
     for (int i = 1; i < 9; i++)
@@ -2278,6 +2348,9 @@ void MainWindow::onEmuStart()
 
 void MainWindow::onEmuStop()
 {
+    showingLibrary = true;
+    if (centralStack) centralStack->setCurrentWidget(library);
+
     if (!hasMenu) return;
 
     for (int i = 0; i < 9; i++)

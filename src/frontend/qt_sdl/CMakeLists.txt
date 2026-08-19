@@ -17,6 +17,7 @@ set(SOURCES_QT_SDL
     DateTimeDialog.cpp
     EmuSettingsDialog.cpp
     SettingsHubDialog.cpp
+    LibraryScreen.cpp
     PowerManagement/PowerManagementDialog.cpp
     PowerManagement/resources/battery.qrc
     InputConfig/InputConfigDialog.cpp

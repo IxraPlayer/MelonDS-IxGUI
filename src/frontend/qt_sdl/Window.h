@@ -26,6 +26,7 @@
 #include <QWidget>
 #include <QWindow>
 #include <QMainWindow>
+#include <QStackedWidget>
 #include <QImage>
 #include <QActionGroup>
 #include <QTimer>
@@ -34,6 +35,7 @@
 #include <QCloseEvent>
 
 #include "Screen.h"
+#include "LibraryScreen.h"
 #include "Config.h"
 #include "MPInterface.h"
 
@@ -141,6 +143,8 @@ private slots:
     void onEmuSettingsDialogFinished(int res);
     void onOpenSettingsHub();
     void onSettingsHubCategory(int index);
+    void onLibraryGameActivated(QString path);
+    void onLibraryAddGameRequested();
     void onOpenInputConfig();
     void onInputConfigFinished(int res);
     void onOpenVideoSettings();
@@ -226,6 +230,9 @@ private:
 
 public:
     ScreenPanel* panel;
+    QStackedWidget* centralStack = nullptr;
+    LibraryScreen* library = nullptr;
+    bool showingLibrary = true;
 
     bool hasMenu;
 
