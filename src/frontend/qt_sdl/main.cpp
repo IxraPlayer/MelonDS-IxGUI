@@ -331,7 +331,7 @@ int main(int argc, char** argv)
     MelonApplication melon(argc, argv);
 
     QString langCode = QLocale::system().name().section('_', 0, 0);
-    QString configLang = Config::GetConfigString("Language");
+    QString configLang = Config::GetGlobalTable().GetQString("Language");
     if (!configLang.isEmpty())
         langCode = configLang;
 
