@@ -43,6 +43,10 @@
 #include <QDesktopServices>
 #include <QDir>
 #include <QCheckBox>
+#include <QFile>
+#include <QTextStream>
+#include <QRegularExpression>
+#include <QStandardPaths>
 
 #include "main.h"
 #include "CheatsDialog.h"
@@ -1396,6 +1400,9 @@ QString MainWindow::installGameToLibrary(const QStringList& file)
     if (!QFile::copy(srcPath, destPath))
         return QString();
 
+    if (globalCfg.GetBool("Library.DesktopShortcuts"))
+        createDesktopShortcut(srcInfo.completeBaseName(), destPath);
+
     bool suppressPrompt = globalCfg.GetBool("Library.SuppressDeletePrompt");
     if (!suppressPrompt)
     {
@@ -1420,6 +1427,106 @@ QString MainWindow::installGameToLibrary(const QStringList& file)
     }
 
     return destPath;
+}
+
+QString MainWindow::detectDesktopPath()
+{
+#if defined(Q_OS_WIN)
+    QProcess proc;
+    proc.start("powershell", {"-NoProfile", "-Command", "[Environment]::GetFolderPath('Desktop')"});
+    proc.waitForFinished(3000);
+    QString path = QString::fromLocal8Bit(proc.readAllStandardOutput()).trimmed();
+    if (!path.isEmpty())
+        return path;
+#elif defined(Q_OS_MAC)
+    QString path = QDir::homePath() + "/Desktop";
+    if (QDir(path).exists())
+        return path;
+#else // Linux and other Unix-likes
+    QProcess proc;
+    proc.start("xdg-user-dir", {"DESKTOP"});
+    proc.waitForFinished(3000);
+    QString path = QString::fromLocal8Bit(proc.readAllStandardOutput()).trimmed();
+    if (!path.isEmpty() && QDir(path).exists())
+        return path;
+
+    path = QDir::homePath() + "/Desktop";
+    if (QDir(path).exists())
+        return path;
+#endif
+
+    // Fallback for any platform where the above didn't work out.
+    QString fallback = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+    if (!fallback.isEmpty())
+        return fallback;
+
+    return QDir::homePath() + "/Desktop";
+}
+
+void MainWindow::createDesktopShortcut(const QString& gameName, const QString& gamePath)
+{
+    QString desktopPath = detectDesktopPath();
+    if (desktopPath.isEmpty())
+        return;
+
+    QDir desktopDir(desktopPath);
+    if (!desktopDir.exists())
+        return;
+
+    QString safeName = gameName;
+    safeName.replace(QRegularExpression("[\\\\/:*?\"<>|]"), "_");
+    if (safeName.isEmpty())
+        safeName = "melonDS Game";
+
+    QString exePath = QCoreApplication::applicationFilePath();
+    exePath = QDir::toNativeSeparators(exePath);
+    QString nativeGamePath = QDir::toNativeSeparators(gamePath);
+
+#if defined(Q_OS_WIN)
+    QString shortcutPath = QDir::toNativeSeparators(desktopDir.filePath(safeName + ".lnk"));
+
+    QString script =
+        "$ws = New-Object -ComObject WScript.Shell; "
+        "$sc = $ws.CreateShortcut('" + shortcutPath.replace("'", "''") + "'); "
+        "$sc.TargetPath = '" + exePath.replace("'", "''") + "'; "
+        "$sc.Arguments = '\"" + nativeGamePath.replace("'", "''") + "\"'; "
+        "$sc.WorkingDirectory = '" + QDir::toNativeSeparators(QCoreApplication::applicationDirPath()).replace("'", "''") + "'; "
+        "$sc.IconLocation = '" + exePath.replace("'", "''") + ",0'; "
+        "$sc.Save()";
+
+    QProcess::execute("powershell", {"-NoProfile", "-WindowStyle", "Hidden", "-Command", script});
+
+#elif defined(Q_OS_MAC)
+    QString shortcutPath = desktopDir.filePath(safeName + ".command");
+
+    QFile file(shortcutPath);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QTextStream out(&file);
+        out << "#!/bin/bash\n";
+        out << "\"" << exePath << "\" \"" << nativeGamePath << "\"\n";
+        file.close();
+        file.setPermissions(file.permissions() | QFileDevice::ExeOwner | QFileDevice::ExeGroup | QFileDevice::ExeOther);
+    }
+
+#else // Linux and other Unix-likes
+    QString shortcutPath = desktopDir.filePath(safeName + ".desktop");
+
+    QFile file(shortcutPath);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QTextStream out(&file);
+        out << "[Desktop Entry]\n";
+        out << "Type=Application\n";
+        out << "Name=" << gameName << "\n";
+        out << "Exec=\"" << exePath << "\" \"" << nativeGamePath << "\"\n";
+        out << "Icon=" << exePath << "\n";
+        out << "Terminal=false\n";
+        out << "Categories=Game;\n";
+        file.close();
+        file.setPermissions(file.permissions() | QFileDevice::ExeOwner | QFileDevice::ExeGroup | QFileDevice::ExeOther);
+    }
+#endif
 }
 
 void MainWindow::saveLibraryToConfig()

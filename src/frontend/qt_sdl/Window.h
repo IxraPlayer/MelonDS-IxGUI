@@ -205,6 +205,8 @@ private:
     QString pickFileFromArchive(QString archiveFileName);
     QStringList pickROM(bool gba);
     QString installGameToLibrary(const QStringList& file);
+    QString detectDesktopPath();
+    void createDesktopShortcut(const QString& gameName, const QString& gamePath);
     void updateCartInserted(bool gba);
 
     void createScreenPanel();
