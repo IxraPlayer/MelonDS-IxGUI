@@ -97,6 +97,17 @@ add_executable(melonDS ${SOURCES_QT_SDL})
 add_subdirectory("../../net"
     ${CMAKE_BINARY_DIR}/net)
 
+find_package(Qt6 COMPONENTS LinguistTools REQUIRED)
+
+set(TS_FILES
+    translations/melonDS_tr.ts
+)
+
+qt6_add_translations(melonDS
+    TS_FILES ${TS_FILES}
+    RESOURCE_PREFIX "/translations"
+)
+
 target_link_libraries(melonDS PRIVATE net-utils)
 
 if (WIN32)

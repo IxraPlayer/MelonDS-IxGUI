@@ -36,6 +36,8 @@
 #include <QVector>
 #include <QCommandLineParser>
 #include <QStandardPaths>
+#include <QTranslator>
+#include <QLocale>
 #ifndef _WIN32
 #include <QGuiApplication>
 #include <QSocketNotifier>
@@ -327,6 +329,16 @@ int main(int argc, char** argv)
         printf("did you just call me a derp???\n");
 
     MelonApplication melon(argc, argv);
+
+    QString langCode = QLocale::system().name().section('_', 0, 0);
+    QString configLang = Config::GetConfigString("Language");
+    if (!configLang.isEmpty())
+        langCode = configLang;
+
+    QTranslator translator;
+    if (translator.load(":/translations/melonDS_" + langCode + ".qm"))
+        melon.installTranslator(&translator);
+
     pathInit();
 
     CLI::CommandLineOptions* options = CLI::ManageArgs(melon);
