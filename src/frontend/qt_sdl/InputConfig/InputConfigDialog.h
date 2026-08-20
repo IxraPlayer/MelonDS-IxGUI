@@ -97,6 +97,7 @@ static_assert(hk_general.size() == hk_general_labels.size());
 
 namespace Ui { class InputConfigDialog; }
 class InputConfigDialog;
+class MainWindow;
 
 class InputConfigDialog : public QDialog
 {
@@ -143,6 +144,7 @@ private:
 
     Ui::InputConfigDialog* ui;
 
+    MainWindow* mainWindow;
     EmuInstance* emuInstance;
 
     int keypadKeyMap[12], keypadJoyMap[12];

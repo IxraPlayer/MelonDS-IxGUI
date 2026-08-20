@@ -276,6 +276,7 @@ public:
 
     QAction* actEmuSettings;
     QAction* actSettingsHub;
+    class SettingsHubDialog* settingsHub = nullptr;
 #ifdef __APPLE__
     QAction* actPreferences;
 #endif

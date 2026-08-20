@@ -47,36 +47,36 @@ QString LibraryScreen::displayName(const QString& path) const
     return name;
 }
 
-QIcon LibraryScreen::loadRomIcon(const QString& path) const
+QImage LibraryScreen::loadRomIconImage(const QString& path)
 {
     // Archive entries ("archive.zip|game.nds") aren't supported for icon
     // extraction yet; fall back to text-only tiles for those.
     if (path.contains('|'))
-        return QIcon();
+        return QImage();
 
     QFile file(path);
     if (!file.open(QIODevice::ReadOnly))
-        return QIcon();
+        return QImage();
 
     NDSHeader header;
     if (file.read(reinterpret_cast<char*>(&header), sizeof(header)) != (qint64)sizeof(header))
-        return QIcon();
+        return QImage();
 
     if (header.BannerOffset == 0)
-        return QIcon();
+        return QImage();
 
     u8 iconData[512];
     u16 palette[16];
 
     if (!file.seek(header.BannerOffset + offsetof(NDSBanner, Icon)))
-        return QIcon();
+        return QImage();
     if (file.read(reinterpret_cast<char*>(iconData), sizeof(iconData)) != (qint64)sizeof(iconData))
-        return QIcon();
+        return QImage();
 
     if (!file.seek(header.BannerOffset + offsetof(NDSBanner, Palette)))
-        return QIcon();
+        return QImage();
     if (file.read(reinterpret_cast<char*>(palette), sizeof(palette)) != (qint64)sizeof(palette))
-        return QIcon();
+        return QImage();
 
     u32 paletteRGBA[16];
     for (int i = 0; i < 16; i++)
@@ -107,7 +107,7 @@ QIcon LibraryScreen::loadRomIcon(const QString& path) const
     }
 
     QImage img(reinterpret_cast<uchar*>(iconRGBA), 32, 32, QImage::Format_RGBA8888);
-    return QIcon(QPixmap::fromImage(img.copy()));
+    return img.copy();
 }
 
 void LibraryScreen::addGame(const QString& path)
@@ -124,9 +124,10 @@ void LibraryScreen::addGame(const QString& path)
     tile->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
     tile->setContextMenuPolicy(Qt::CustomContextMenu);
 
-    QIcon icon = loadRomIcon(path);
-    if (!icon.isNull())
+    QImage iconImg = loadRomIconImage(path);
+    if (!iconImg.isNull())
     {
+        QIcon icon(QPixmap::fromImage(iconImg));
         tile->setIcon(icon);
         tile->setIconSize(QSize(64, 64));
     }

@@ -25,6 +25,7 @@ namespace Ui { class InterfaceSettingsDialog; }
 class InterfaceSettingsDialog;
 
 class EmuInstance;
+class MainWindow;
 
 class InterfaceSettingsDialog : public QDialog
 {
@@ -75,6 +76,7 @@ private slots:
 private:
     Ui::InterfaceSettingsDialog* ui;
 
+    MainWindow* mainWindow;
     EmuInstance* emuInstance;
 };
 

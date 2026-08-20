@@ -26,6 +26,7 @@ namespace Ui { class AudioSettingsDialog; }
 class AudioSettingsDialog;
 
 class EmuInstance;
+class MainWindow;
 
 class AudioSettingsDialog : public QDialog
 {
@@ -74,6 +75,7 @@ private slots:
 private:
     Ui::AudioSettingsDialog* ui;
 
+    MainWindow* mainWindow;
     EmuInstance* emuInstance;
 
     int oldInterp;

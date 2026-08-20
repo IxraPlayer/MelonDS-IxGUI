@@ -42,7 +42,8 @@ InputConfigDialog::InputConfigDialog(QWidget* parent) : QDialog(parent), ui(new 
     ui->setupUi(this);
     setAttribute(Qt::WA_DeleteOnClose);
 
-    emuInstance = ((MainWindow*)parent)->getEmuInstance();
+    mainWindow = (MainWindow*)parent;
+    emuInstance = mainWindow->getEmuInstance();
 
     Config::Table& instcfg = emuInstance->getLocalConfig();
     Config::Table keycfg = instcfg.GetTable("Keyboard");

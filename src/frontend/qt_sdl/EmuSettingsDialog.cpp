@@ -55,7 +55,8 @@ EmuSettingsDialog::EmuSettingsDialog(QWidget* parent) : QDialog(parent), ui(new 
     ui->setupUi(this);
     setAttribute(Qt::WA_DeleteOnClose);
 
-    emuInstance = ((MainWindow*)parent)->getEmuInstance();
+    mainWindow = (MainWindow*)parent;
+    emuInstance = mainWindow->getEmuInstance();
     auto& cfg = emuInstance->getGlobalConfig();
     auto& instcfg = emuInstance->getLocalConfig();
 
@@ -214,7 +215,7 @@ void EmuSettingsDialog::verifyFirmware()
 
 void EmuSettingsDialog::done(int r)
 {
-    if (!((MainWindow*)parent())->getEmuInstance())
+    if (!mainWindow->getEmuInstance())
     {
         QDialog::done(r);
         closeDlg();

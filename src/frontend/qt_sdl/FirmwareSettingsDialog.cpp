@@ -37,7 +37,8 @@ FirmwareSettingsDialog::FirmwareSettingsDialog(QWidget* parent) : QDialog(parent
     ui->setupUi(this);
     setAttribute(Qt::WA_DeleteOnClose);
 
-    emuInstance = ((MainWindow*)parent)->getEmuInstance();
+    mainWindow = (MainWindow*)parent;
+    emuInstance = mainWindow->getEmuInstance();
 
     auto& cfg = emuInstance->getLocalConfig();
     auto firmcfg = cfg.GetTable("Firmware");
@@ -132,7 +133,7 @@ bool FirmwareSettingsDialog::verifyMAC()
 
 void FirmwareSettingsDialog::done(int r)
 {
-    if (!((MainWindow*)parent())->getEmuInstance())
+    if (!mainWindow->getEmuInstance())
     {
         QDialog::done(r);
         closeDlg();

@@ -29,6 +29,7 @@ namespace Ui { class CameraSettingsDialog; }
 class CameraSettingsDialog;
 
 class EmuInstance;
+class MainWindow;
 
 class CameraPreviewPanel : public QWidget
 {
@@ -94,6 +95,7 @@ private slots:
 
 private:
     Ui::CameraSettingsDialog* ui;
+    MainWindow* mainWindow;
     EmuInstance* emuInstance;
 
     QButtonGroup* grpInputType;

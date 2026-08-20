@@ -26,6 +26,7 @@ namespace Ui { class MPSettingsDialog; }
 class MPSettingsDialog;
 
 class EmuInstance;
+class MainWindow;
 
 class MPSettingsDialog : public QDialog
 {
@@ -60,6 +61,7 @@ private slots:
 
 private:
     Ui::MPSettingsDialog* ui;
+    MainWindow* mainWindow;
     EmuInstance* emuInstance;
 
     QButtonGroup* grpAudioMode;

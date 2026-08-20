@@ -25,6 +25,7 @@
 namespace Ui { class VideoSettingsDialog; }
 class VideoSettingsDialog;
 class EmuInstance;
+class MainWindow;
 
 class VideoSettingsDialog : public QDialog
 {
@@ -76,6 +77,7 @@ private:
     void setEnabled();
 
     Ui::VideoSettingsDialog* ui;
+    MainWindow* mainWindow;
     EmuInstance* emuInstance;
 
     QButtonGroup* grp3DRenderer;

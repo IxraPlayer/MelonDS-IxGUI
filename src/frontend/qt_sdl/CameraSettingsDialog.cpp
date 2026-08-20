@@ -70,7 +70,8 @@ CameraSettingsDialog::CameraSettingsDialog(QWidget* parent) : QDialog(parent), u
     ui->setupUi(this);
     setAttribute(Qt::WA_DeleteOnClose);
 
-    emuInstance = ((MainWindow*)parent)->getEmuInstance();
+    mainWindow = (MainWindow*)parent;
+    emuInstance = mainWindow->getEmuInstance();
 
     for (int i = 0; i < 2; i++)
     {
@@ -163,7 +164,7 @@ void CameraSettingsDialog::on_CameraSettingsDialog_accepted()
 
 void CameraSettingsDialog::on_CameraSettingsDialog_rejected()
 {
-    if (!((MainWindow*)parent())->getEmuInstance())
+    if (!mainWindow->getEmuInstance())
     {
         closeDlg();
         return;

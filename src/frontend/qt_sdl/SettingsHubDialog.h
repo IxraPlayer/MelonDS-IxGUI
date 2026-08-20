@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QListWidget>
+#include <QStackedWidget>
 
 class SettingsHubDialog : public QDialog
 {
@@ -12,6 +13,12 @@ public:
     explicit SettingsHubDialog(QWidget* parent);
     int addCategory(const QString& title);
 
+    // Embeds the given widget into the right-hand panel, replacing whatever
+    // page is currently shown there, and takes ownership of it. The widget
+    // must not have been shown/opened as a top-level window before this is
+    // called (embedding a still-modal QDialog freezes the UI).
+    void setPage(QWidget* page);
+
 signals:
     void categorySelected(int index);
 
@@ -20,6 +27,8 @@ private slots:
 
 private:
     QListWidget* sidebar;
+    QStackedWidget* stack;
+    QWidget* placeholder;
 };
 
 #endif

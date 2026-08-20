@@ -1482,8 +1482,28 @@ void MainWindow::createDesktopShortcut(const QString& gameName, const QString& g
     exePath = QDir::toNativeSeparators(exePath);
     QString nativeGamePath = QDir::toNativeSeparators(gamePath);
 
+    // Prefer the game's own icon (decoded from the NDS ROM banner); fall
+    // back to melonDS's own app icon if the ROM has none (e.g. homebrew).
+    QImage iconImg = LibraryScreen::loadRomIconImage(gamePath);
+    if (iconImg.isNull())
+        iconImg = QIcon(":/melon-icon").pixmap(256, 256).toImage();
+
+    QString iconsDirPath = QString::fromStdString(Platform::GetLocalFilePath("shortcut_icons"));
+    QDir iconsDir(iconsDirPath);
+    if (!iconsDir.exists())
+        iconsDir.mkpath(".");
+
 #if defined(Q_OS_WIN)
     QString shortcutPath = QDir::toNativeSeparators(desktopDir.filePath(safeName + ".lnk"));
+
+    QString iconLocation = exePath + ",0";
+    if (!iconImg.isNull())
+    {
+        QImage scaled = iconImg.scaled(256, 256, Qt::KeepAspectRatio, Qt::FastTransformation);
+        QString icoPath = iconsDir.filePath(safeName + ".ico");
+        if (scaled.save(icoPath, "ICO"))
+            iconLocation = QDir::toNativeSeparators(icoPath) + ",0";
+    }
 
     QString script =
         "$ws = New-Object -ComObject WScript.Shell; "
@@ -1491,26 +1511,100 @@ void MainWindow::createDesktopShortcut(const QString& gameName, const QString& g
         "$sc.TargetPath = '" + exePath.replace("'", "''") + "'; "
         "$sc.Arguments = '\"" + nativeGamePath.replace("'", "''") + "\"'; "
         "$sc.WorkingDirectory = '" + QDir::toNativeSeparators(QCoreApplication::applicationDirPath()).replace("'", "''") + "'; "
-        "$sc.IconLocation = '" + exePath.replace("'", "''") + ",0'; "
+        "$sc.IconLocation = '" + iconLocation.replace("'", "''") + "'; "
         "$sc.Save()";
 
     QProcess::execute("powershell", {"-NoProfile", "-WindowStyle", "Hidden", "-Command", script});
 
 #elif defined(Q_OS_MAC)
-    QString shortcutPath = desktopDir.filePath(safeName + ".command");
+    // Plain .command scripts can't carry a custom icon on macOS - only a
+    // real .app bundle can. Build a minimal one: a launcher script plus an
+    // .icns built from the ROM icon via the system's own sips/iconutil.
+    QString bundlePath = desktopDir.filePath(safeName + ".app");
 
-    QFile file(shortcutPath);
-    if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+    QDir bundleDir(bundlePath);
+    if (bundleDir.exists())
     {
-        QTextStream out(&file);
+        // Replacing an existing shortcut - clear it out first.
+        bundleDir.removeRecursively();
+    }
+
+    QDir().mkpath(bundlePath + "/Contents/MacOS");
+    QDir().mkpath(bundlePath + "/Contents/Resources");
+
+    QFile runScript(bundlePath + "/Contents/MacOS/run");
+    if (runScript.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QTextStream out(&runScript);
         out << "#!/bin/bash\n";
         out << "\"" << exePath << "\" \"" << nativeGamePath << "\"\n";
-        file.close();
-        file.setPermissions(file.permissions() | QFileDevice::ExeOwner | QFileDevice::ExeGroup | QFileDevice::ExeOther);
+        runScript.close();
+        runScript.setPermissions(runScript.permissions() | QFileDevice::ExeOwner | QFileDevice::ExeGroup | QFileDevice::ExeOther);
     }
+
+    bool haveIcon = false;
+    if (!iconImg.isNull())
+    {
+        QString iconsetPath = iconsDir.filePath(safeName + ".iconset");
+        QDir(iconsetPath).removeRecursively();
+        QDir().mkpath(iconsetPath);
+
+        struct { int size; const char* name; } sizes[] = {
+            {16, "icon_16x16.png"},   {32, "icon_16x16@2x.png"},
+            {32, "icon_32x32.png"},   {64, "icon_32x32@2x.png"},
+            {128, "icon_128x128.png"}, {256, "icon_128x128@2x.png"},
+            {256, "icon_256x256.png"}, {512, "icon_256x256@2x.png"},
+            {512, "icon_512x512.png"}, {1024, "icon_512x512@2x.png"},
+        };
+
+        bool wroteAny = false;
+        for (const auto& s : sizes)
+        {
+            QImage scaled = iconImg.scaled(s.size, s.size, Qt::KeepAspectRatio, Qt::FastTransformation);
+            if (scaled.save(iconsetPath + "/" + s.name, "PNG"))
+                wroteAny = true;
+        }
+
+        if (wroteAny)
+        {
+            QString icnsPath = bundlePath + "/Contents/Resources/icon.icns";
+            QProcess::execute("iconutil", {"-c", "icns", iconsetPath, "-o", icnsPath});
+            haveIcon = QFile::exists(icnsPath);
+        }
+
+        QDir(iconsetPath).removeRecursively();
+    }
+
+    QFile plist(bundlePath + "/Contents/Info.plist");
+    if (plist.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QTextStream out(&plist);
+        out << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+        out << "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n";
+        out << "<plist version=\"1.0\">\n<dict>\n";
+        out << "  <key>CFBundleExecutable</key><string>run</string>\n";
+        out << "  <key>CFBundleName</key><string>" << gameName << "</string>\n";
+        out << "  <key>CFBundlePackageType</key><string>APPL</string>\n";
+        if (haveIcon)
+            out << "  <key>CFBundleIconFile</key><string>icon.icns</string>\n";
+        out << "</dict>\n</plist>\n";
+        plist.close();
+    }
+
+    // Let Finder know the bundle's metadata changed so it picks up the icon.
+    QProcess::execute("touch", {bundlePath});
 
 #else // Linux and other Unix-likes
     QString shortcutPath = desktopDir.filePath(safeName + ".desktop");
+
+    QString iconPath = exePath;
+    if (!iconImg.isNull())
+    {
+        QImage scaled = iconImg.scaled(256, 256, Qt::KeepAspectRatio, Qt::FastTransformation);
+        QString pngPath = iconsDir.filePath(safeName + ".png");
+        if (scaled.save(pngPath, "PNG"))
+            iconPath = pngPath;
+    }
 
     QFile file(shortcutPath);
     if (file.open(QIODevice::WriteOnly | QIODevice::Text))
@@ -1520,7 +1614,7 @@ void MainWindow::createDesktopShortcut(const QString& gameName, const QString& g
         out << "Type=Application\n";
         out << "Name=" << gameName << "\n";
         out << "Exec=\"" << exePath << "\" \"" << nativeGamePath << "\"\n";
-        out << "Icon=" << exePath << "\n";
+        out << "Icon=" << iconPath << "\n";
         out << "Terminal=false\n";
         out << "Categories=Game;\n";
         file.close();
@@ -2060,39 +2154,49 @@ bool MainWindow::lanWarning(bool host)
 
 void MainWindow::onOpenSettingsHub()
 {
-    SettingsHubDialog* hub = new SettingsHubDialog(this);
-    hub->setAttribute(Qt::WA_DeleteOnClose);
+    settingsHub = new SettingsHubDialog(this);
+    settingsHub->setAttribute(Qt::WA_DeleteOnClose);
+    connect(settingsHub, &QObject::destroyed, this, [this]() { settingsHub = nullptr; });
 
-    hub->addCategory("Emu settings");
-    hub->addCategory("Input and hotkeys");
-    hub->addCategory("Video settings");
-    hub->addCategory("Camera settings");
-    hub->addCategory("Audio settings");
-    hub->addCategory("Multiplayer settings");
-    hub->addCategory("Wifi settings");
-    hub->addCategory("Firmware settings");
-    hub->addCategory("Interface settings");
-    hub->addCategory("Path settings");
+    settingsHub->addCategory("Emu settings");
+    settingsHub->addCategory("Input and hotkeys");
+    settingsHub->addCategory("Video settings");
+    settingsHub->addCategory("Camera settings");
+    settingsHub->addCategory("Audio settings");
+    settingsHub->addCategory("Multiplayer settings");
+    settingsHub->addCategory("Wifi settings");
+    settingsHub->addCategory("Firmware settings");
+    settingsHub->addCategory("Interface settings");
+    settingsHub->addCategory("Path settings");
 
-    connect(hub, &SettingsHubDialog::categorySelected, this, &MainWindow::onSettingsHubCategory);
+    connect(settingsHub, &SettingsHubDialog::categorySelected, this, &MainWindow::onSettingsHubCategory);
 
-    hub->open();
+    settingsHub->open();
 }
 
 void MainWindow::onSettingsHubCategory(int index)
 {
+    if (!settingsHub)
+        return;
+
+    // IMPORTANT: these are freshly constructed with `this` (MainWindow) as
+    // the parent, exactly like the standalone menu actions do, so the
+    // dialogs' internal ((MainWindow*)...)->getEmuInstance() logic works.
+    // They must NOT be shown/opened here - setPage() embeds them as plain
+    // widgets, and stripping window flags off an already-shown modal dialog
+    // is what caused the freeze before.
     switch (index)
     {
-        case 0: onOpenEmuSettings(); break;
-        case 1: onOpenInputConfig(); break;
-        case 2: onOpenVideoSettings(); break;
-        case 3: onOpenCameraSettings(); break;
-        case 4: onOpenAudioSettings(); break;
-        case 5: onOpenMPSettings(); break;
-        case 6: onOpenWifiSettings(); break;
-        case 7: onOpenFirmwareSettings(); break;
-        case 8: onOpenInterfaceSettings(); break;
-        case 9: onOpenPathSettings(); break;
+        case 0: settingsHub->setPage(new EmuSettingsDialog(this)); break;
+        case 1: settingsHub->setPage(new InputConfigDialog(this)); break;
+        case 2: settingsHub->setPage(new VideoSettingsDialog(this)); break;
+        case 3: settingsHub->setPage(new CameraSettingsDialog(this)); break;
+        case 4: settingsHub->setPage(new AudioSettingsDialog(this)); break;
+        case 5: settingsHub->setPage(new MPSettingsDialog(this)); break;
+        case 6: settingsHub->setPage(new WifiSettingsDialog(this)); break;
+        case 7: settingsHub->setPage(new FirmwareSettingsDialog(this)); break;
+        case 8: settingsHub->setPage(new InterfaceSettingsDialog(this)); break;
+        case 9: settingsHub->setPage(new PathSettingsDialog(this)); break;
     }
 }
 

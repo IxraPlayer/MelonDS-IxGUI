@@ -38,7 +38,8 @@ AudioSettingsDialog::AudioSettingsDialog(QWidget* parent) : QDialog(parent), ui(
     ui->setupUi(this);
     setAttribute(Qt::WA_DeleteOnClose);
 
-    emuInstance = ((MainWindow*)parent)->getEmuInstance();
+    mainWindow = (MainWindow*)parent;
+    emuInstance = mainWindow->getEmuInstance();
     auto& cfg = emuInstance->getGlobalConfig();
     auto& instcfg = emuInstance->getLocalConfig();
     bool emuActive = emuInstance->emuIsActive();
@@ -170,7 +171,7 @@ void AudioSettingsDialog::on_AudioSettingsDialog_accepted()
 
 void AudioSettingsDialog::on_AudioSettingsDialog_rejected()
 {
-    if (!((MainWindow*)parent())->getEmuInstance())
+    if (!mainWindow->getEmuInstance())
     {
         closeDlg();
         return;

@@ -33,7 +33,8 @@ InterfaceSettingsDialog::InterfaceSettingsDialog(QWidget* parent) : QDialog(pare
     ui->setupUi(this);
     setAttribute(Qt::WA_DeleteOnClose);
 
-    emuInstance = ((MainWindow*)parent)->getEmuInstance();
+    mainWindow = (MainWindow*)parent;
+    emuInstance = mainWindow->getEmuInstance();
 
     auto& cfg = emuInstance->getGlobalConfig();
 
@@ -140,7 +141,7 @@ void InterfaceSettingsDialog::on_cbxUILanguage_currentIndexChanged(int index)
 
 void InterfaceSettingsDialog::done(int r)
 {
-    if (!((MainWindow*)parent())->getEmuInstance())
+    if (!mainWindow->getEmuInstance())
     {
         QDialog::done(r);
         closeDlg();

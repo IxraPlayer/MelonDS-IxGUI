@@ -43,7 +43,8 @@ PathSettingsDialog::PathSettingsDialog(QWidget* parent) : QDialog(parent), ui(ne
     ui->setupUi(this);
     setAttribute(Qt::WA_DeleteOnClose);
 
-    emuInstance = ((MainWindow*)parent)->getEmuInstance();
+    mainWindow = (MainWindow*)parent;
+    emuInstance = mainWindow->getEmuInstance();
 
     auto& cfg = emuInstance->getLocalConfig();
     ui->txtSaveFilePath->setText(cfg.GetQString("SaveFilePath"));
@@ -72,7 +73,7 @@ PathSettingsDialog::~PathSettingsDialog()
 
 void PathSettingsDialog::done(int r)
 {
-    if (!((MainWindow*)parent())->getEmuInstance())
+    if (!mainWindow->getEmuInstance())
     {
         QDialog::done(r);
         closeDlg();

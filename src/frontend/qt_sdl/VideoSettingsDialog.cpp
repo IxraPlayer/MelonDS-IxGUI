@@ -55,7 +55,8 @@ VideoSettingsDialog::VideoSettingsDialog(QWidget* parent) : QDialog(parent), ui(
     ui->setupUi(this);
     setAttribute(Qt::WA_DeleteOnClose);
 
-    emuInstance = ((MainWindow*)parent)->getEmuInstance();
+    mainWindow = (MainWindow*)parent;
+    emuInstance = mainWindow->getEmuInstance();
 
     auto& cfg = emuInstance->getGlobalConfig();
     oldRenderer = cfg.GetInt("3D.Renderer");
@@ -121,7 +122,7 @@ void VideoSettingsDialog::on_VideoSettingsDialog_accepted()
 
 void VideoSettingsDialog::on_VideoSettingsDialog_rejected()
 {
-    if (!((MainWindow*)parent())->getEmuInstance())
+    if (!mainWindow->getEmuInstance())
     {
         closeDlg();
         return;
