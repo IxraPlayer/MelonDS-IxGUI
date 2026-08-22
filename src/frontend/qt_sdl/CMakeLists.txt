@@ -112,9 +112,18 @@ if (Qt6LinguistTools_FOUND)
     qt6_add_translations(melonDS
         TS_FILES ${TS_FILES}
         RESOURCE_PREFIX "/translations"
+        QM_FILES_OUTPUT_VARIABLE QM_FILES
     )
+
+    # qt6_add_translations() only *declares* the .qm build+embed step; it
+    # does not guarantee CMake will actually run lrelease before the
+    # executable is linked/packaged unless something depends on the
+    # generated .qm files. Without this, "Language: Turkish" silently
+    # falls back to English because :/translations/melonDS_tr.qm never
+    # gets embedded in some generator/build setups.
+    add_dependencies(melonDS ${QM_FILES})
 else()
-    message(WARNING "Qt6 LinguistTools not found; translations will not be built. Install the LinguistTools component (e.g. 'qt6-l10n-tools' on Debian/Ubuntu) to enable them.")
+    message(WARNING "Qt6 LinguistTools (lrelease) not found; UI translations (e.g. Turkish) will NOT work, the app will silently stay in English. Install the LinguistTools component - 'qt6-l10n-tools' on Debian/Ubuntu, 'qt6-tools' on Fedora/Arch, or the 'Qt Linguist' component in the Qt Windows installer - then re-run CMake configure.")
 endif()
 
 target_link_libraries(melonDS PRIVATE net-utils)
