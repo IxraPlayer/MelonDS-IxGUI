@@ -80,4 +80,26 @@ void SettingsHubDialog::setPage(QWidget* page)
     page->setWindowFlags(Qt::Widget);
     stack->addWidget(page);
     stack->setCurrentWidget(page);
+
+    // The embedded page was originally designed as a standalone dialog, so
+    // it carries its own preferred size. If the hub window is smaller than
+    // that, the page gets squeezed into the right-hand panel and everything
+    // inside it looks cramped until the user manually enlarges the window.
+    // Grow (never shrink below the base minimum) to comfortably fit whatever
+    // page is currently shown.
+    QSize pageHint = page->sizeHint().expandedTo(page->minimumSizeHint());
+
+    const int sidebarWidth = sidebar->width();
+    const int rightMarginsW = 24 + 24;   // left/right content margins
+    const int rightMarginsH = 20 + 16;   // top/bottom content margins
+    const int closeRowH = 40;            // close button row + spacing
+
+    int neededW = sidebarWidth + rightMarginsW + pageHint.width() + 8;
+    int neededH = rightMarginsH + pageHint.height() + closeRowH;
+
+    QSize base(680, 480);
+    QSize target = base.expandedTo(QSize(neededW, neededH));
+
+    if (target.width() > width() || target.height() > height())
+        resize(target.expandedTo(size()));
 }

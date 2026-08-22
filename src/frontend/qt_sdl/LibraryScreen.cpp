@@ -6,15 +6,30 @@
 #include <QFile>
 #include <QImage>
 #include <QPixmap>
+#include <QPainter>
+#include <QLinearGradient>
 #include <cstddef>
 
 #include "NDS_Header.h"
 
 using namespace melonDS;
 
-LibraryScreen::LibraryScreen(QWidget* parent) : QWidget(parent), columns(5)
+LibraryScreen::LibraryScreen(QWidget* parent) : QWidget(parent), columns(5), bgHue(0.58)
 {
     setObjectName("libraryScreen");
+
+    // Slowly drift the launcher's background hue so it feels alive instead
+    // of flat. ~40ms steps with a tiny increment keeps a full cycle around
+    // two minutes, which reads as "gently shifting" rather than distracting.
+    bgAnimTimer = new QTimer(this);
+    connect(bgAnimTimer, &QTimer::timeout, this, [this]()
+    {
+        bgHue += 0.00035;
+        if (bgHue >= 1.0)
+            bgHue -= 1.0;
+        update();
+    });
+    bgAnimTimer->start(40);
 
     auto* outer = new QVBoxLayout(this);
     outer->setContentsMargins(24, 24, 24, 24);
@@ -39,6 +54,28 @@ LibraryScreen::LibraryScreen(QWidget* parent) : QWidget(parent), columns(5)
     connect(addTile, &QToolButton::clicked, this, &LibraryScreen::addGameRequested);
 
     grid->addWidget(addTile, 0, 0);
+}
+
+void LibraryScreen::paintEvent(QPaintEvent* event)
+{
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing, false);
+
+    // Two anchor tones, one notch lighter than the old flat #0d0f14
+    // background, drifting slowly around the hue wheel together so the
+    // gradient direction stays put but the color keeps gently shifting.
+    const double hue2 = bgHue + 0.06 > 1.0 ? bgHue + 0.06 - 1.0 : bgHue + 0.06;
+
+    QColor topLeft = QColor::fromHsvF(bgHue, 0.35, 0.115);
+    QColor bottomRight = QColor::fromHsvF(hue2, 0.30, 0.145);
+
+    QLinearGradient gradient(0, 0, width(), height());
+    gradient.setColorAt(0.0, topLeft);
+    gradient.setColorAt(1.0, bottomRight);
+
+    painter.fillRect(rect(), gradient);
+
+    QWidget::paintEvent(event);
 }
 
 QString LibraryScreen::displayName(const QString& path) const

@@ -6,7 +6,7 @@ QWidget {
 }
 
 QMainWindow, QDialog {
-    background-color: #0b0c10;
+    background-color: rgba(11, 12, 16, 235);
     border: 1px solid #20232c;
     border-radius: 18px;
 }
@@ -358,7 +358,8 @@ QProgressBar::chunk {
 }
 
 #libraryScreen {
-    background-color: #08090c;
+    /* background is painted by LibraryScreen's animated gradient */
+    background-color: transparent;
 }
 
 #libraryHeader {

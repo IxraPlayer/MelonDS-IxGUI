@@ -8,6 +8,8 @@
 #include <QMap>
 #include <QIcon>
 #include <QImage>
+#include <QTimer>
+#include <QColor>
 
 class LibraryScreen : public QWidget
 {
@@ -30,6 +32,9 @@ signals:
     void addGameRequested();
     void libraryChanged();
 
+protected:
+    void paintEvent(QPaintEvent* event) override;
+
 private:
     void relayout();
     QString displayName(const QString& path) const;
@@ -39,6 +44,12 @@ private:
     QStringList paths;
     QMap<QString, QToolButton*> tiles;
     int columns;
+
+    // Slow, subtle "living" background: a diagonal gradient whose hue
+    // drifts over roughly two minutes, sitting one notch lighter than the
+    // old flat launcher background.
+    QTimer* bgAnimTimer;
+    double bgHue;
 };
 
 #endif
