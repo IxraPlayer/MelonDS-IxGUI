@@ -7,6 +7,7 @@
 #include <QImage>
 #include <QPixmap>
 #include <QPainter>
+#include <QPainterPath>
 #include <QLinearGradient>
 #include <cstddef>
 
@@ -162,10 +163,27 @@ bool LibraryScreen::eventFilter(QObject* watched, QEvent* event)
 void LibraryScreen::paintEvent(QPaintEvent* event)
 {
     QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing, false);
+    painter.setRenderHint(QPainter::Antialiasing, true);
 
-    // Static dark background, no color animation.
-    painter.fillRect(rect(), QColor(0x0d, 0x0f, 0x14));
+    // The window itself has rounded corners (see QMainWindow in the .qss),
+    // so a flat square fill here left a harsh, mismatched-looking edge at
+    // the bottom corners and a hard color seam against the window behind
+    // it. Round the bottom corners to match the window radius and use a
+    // color close to the app's base background so the seam all but
+    // disappears instead of reading as a separate panel/frame.
+    const qreal radius = 18.0;
+    QRectF r = rect();
+
+    QPainterPath path;
+    path.moveTo(r.left(), r.top());
+    path.lineTo(r.right(), r.top());
+    path.lineTo(r.right(), r.bottom() - radius);
+    path.arcTo(r.right() - 2 * radius, r.bottom() - 2 * radius, 2 * radius, 2 * radius, 0, -90);
+    path.lineTo(r.left() + radius, r.bottom());
+    path.arcTo(r.left(), r.bottom() - 2 * radius, 2 * radius, 2 * radius, -90, -90);
+    path.closeSubpath();
+
+    painter.fillPath(path, QColor(0x14, 0x16, 0x1c));
 
     QWidget::paintEvent(event);
 }

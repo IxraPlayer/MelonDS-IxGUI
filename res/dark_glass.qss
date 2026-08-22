@@ -469,9 +469,9 @@ QProgressBar::chunk {
     border: 1px solid transparent;
     border-radius: 10px;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
     color: #b7bcc8;
-    padding: 6px 4px 4px 4px;
+    padding: 4px 4px 4px 4px;
 }
 
 #topMenuButton:hover {

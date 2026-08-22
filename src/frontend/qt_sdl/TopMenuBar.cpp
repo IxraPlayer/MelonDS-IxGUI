@@ -31,14 +31,25 @@ static const int kAnimMs = 140;
 
 TopMenuButton::TopMenuButton(const QString& text, QWidget* parent) : QToolButton(parent)
 {
-    setText(text);
+    // A small emoji glyph above the label, picked by matching the button's
+    // title, so the bar reads a bit friendlier without needing real icon
+    // assets. Falls back to no emoji for anything unrecognized.
+    QString emoji;
+    const QString lower = text.toLower();
+    if (lower.contains("file"))         emoji = QStringLiteral("\xF0\x9F\x93\x81");      // 📁
+    else if (lower.contains("system"))  emoji = QStringLiteral("\xF0\x9F\x92\xBB");      // 💻
+    else if (lower.contains("view"))    emoji = QStringLiteral("\xF0\x9F\x96\xA5\xEF\xB8\x8F"); // 🖥️
+    else if (lower.contains("config"))  emoji = QStringLiteral("\xE2\x9A\x99\xEF\xB8\x8F");     // ⚙️
+    else if (lower.contains("help"))    emoji = QStringLiteral("\xE2\x9D\x93");          // ❓
+
+    setText(emoji.isEmpty() ? text : emoji + "\n" + text);
     setObjectName("topMenuButton");
     setToolButtonStyle(Qt::ToolButtonTextOnly);
     setPopupMode(QToolButton::InstantPopup);
     setFocusPolicy(Qt::NoFocus);
     setCursor(Qt::PointingHandCursor);
     setFixedWidth(m_baseWidth);
-    setFixedHeight(34);
+    setFixedHeight(48);
 }
 
 void TopMenuButton::enterEvent(MenuBtnEnterEvent* event)
@@ -95,10 +106,12 @@ TopMenuButton::~TopMenuButton()
 TopMenuBar::TopMenuBar(QWidget* parent) : QWidget(parent)
 {
     setObjectName("topMenuBar");
-    setFixedHeight(40);
+    setFixedHeight(58);
 
     auto* layout = new QHBoxLayout(this);
-    layout->setContentsMargins(0, 2, 0, 4);
+    // Extra top margin nudges the row down a bit within the taller bar
+    // instead of sitting flush against the title bar above it.
+    layout->setContentsMargins(0, 8, 0, 4);
     layout->setSpacing(6);
     layout->addStretch(1);
     // buttons get inserted before this trailing stretch by addMenuButton()
