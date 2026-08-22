@@ -23,14 +23,94 @@
 #include <QPropertyAnimation>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPainterPath>
 #include <QLinearGradient>
 #include <QRandomGenerator>
+#include <QPixmap>
+#include <cmath>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 // Blue-through-turquoise only, same band used elsewhere in the UI: 0.50 =
 // cyan/turquoise, 0.66 = blue. Keeps the glow line from ever drifting into
 // red/green/purple.
 static constexpr double kGlowHueMin = 0.50;
 static constexpr double kGlowHueMax = 0.66;
+
+// Simple single-color line-art icons drawn in code instead of emoji, so
+// they're always one flat color (emoji glyphs render in their own fixed
+// multi-color palette regardless of the button's text color, which looked
+// out of place next to the rest of the flat UI) and can be sized freely.
+static QIcon makeMenuIcon(const QString& key, const QColor& color, int size)
+{
+    QPixmap pix(size, size);
+    pix.fill(Qt::transparent);
+
+    QPainter p(&pix);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    QPen pen(color, size * 0.09);
+    pen.setJoinStyle(Qt::RoundJoin);
+    pen.setCapStyle(Qt::RoundCap);
+    p.setPen(pen);
+    p.setBrush(Qt::NoBrush);
+
+    const qreal s = size;
+
+    if (key == "file")
+    {
+        QPainterPath path;
+        path.moveTo(s * 0.15, s * 0.28);
+        path.lineTo(s * 0.38, s * 0.28);
+        path.lineTo(s * 0.46, s * 0.38);
+        path.lineTo(s * 0.85, s * 0.38);
+        path.lineTo(s * 0.85, s * 0.80);
+        path.lineTo(s * 0.15, s * 0.80);
+        path.closeSubpath();
+        p.drawPath(path);
+    }
+    else if (key == "system")
+    {
+        p.drawRoundedRect(QRectF(s * 0.15, s * 0.20, s * 0.70, s * 0.48), s * 0.06, s * 0.06);
+        p.drawLine(QPointF(s * 0.38, s * 0.84), QPointF(s * 0.62, s * 0.84));
+        p.drawLine(QPointF(s * 0.50, s * 0.68), QPointF(s * 0.50, s * 0.84));
+    }
+    else if (key == "view")
+    {
+        QPainterPath path;
+        path.moveTo(s * 0.12, s * 0.50);
+        path.quadTo(s * 0.50, s * 0.20, s * 0.88, s * 0.50);
+        path.quadTo(s * 0.50, s * 0.80, s * 0.12, s * 0.50);
+        p.drawPath(path);
+        p.drawEllipse(QPointF(s * 0.50, s * 0.50), s * 0.12, s * 0.12);
+    }
+    else if (key == "config")
+    {
+        const QPointF center(s * 0.5, s * 0.5);
+        const qreal outerR = s * 0.34;
+        const qreal innerR = s * 0.16;
+        p.drawEllipse(center, innerR, innerR);
+        for (int i = 0; i < 6; i++)
+        {
+            qreal angle = i * (M_PI / 3.0);
+            QPointF from(center.x() + std::cos(angle) * innerR, center.y() + std::sin(angle) * innerR);
+            QPointF to(center.x() + std::cos(angle) * outerR, center.y() + std::sin(angle) * outerR);
+            p.drawLine(from, to);
+        }
+    }
+    else if (key == "help")
+    {
+        p.drawEllipse(QRectF(s * 0.15, s * 0.15, s * 0.70, s * 0.70));
+        QFont f = p.font();
+        f.setBold(true);
+        f.setPixelSize(int(s * 0.42));
+        p.setFont(f);
+        p.drawText(QRectF(0, 0, s, s), Qt::AlignCenter, "?");
+    }
+
+    return QIcon(pix);
+}
 
 // growth taken from the hovered button, split evenly and refunded by all
 // its siblings so the row's total width stays constant (nothing overflows
@@ -40,25 +120,35 @@ static const int kAnimMs = 140;
 
 TopMenuButton::TopMenuButton(const QString& text, QWidget* parent) : QToolButton(parent)
 {
-    // A small emoji glyph above the label, picked by matching the button's
-    // title, so the bar reads a bit friendlier without needing real icon
-    // assets. Falls back to no emoji for anything unrecognized.
-    QString emoji;
+    // Pick a monochrome icon key by matching the button's title. Falls
+    // back to no icon for anything unrecognized.
+    QString iconKey;
     const QString lower = text.toLower();
-    if (lower.contains("file"))         emoji = QString::fromUtf8("\xF0\x9F\x93\x81");             // 📁
-    else if (lower.contains("system"))  emoji = QString::fromUtf8("\xF0\x9F\x92\xBB");             // 💻
-    else if (lower.contains("view"))    emoji = QString::fromUtf8("\xF0\x9F\x96\xA5\xEF\xB8\x8F");  // 🖥️
-    else if (lower.contains("config"))  emoji = QString::fromUtf8("\xE2\x9A\x99\xEF\xB8\x8F");      // ⚙️
-    else if (lower.contains("help"))    emoji = QString::fromUtf8("\xE2\x9D\x93");                  // ❓
+    if (lower.contains("file"))         iconKey = "file";
+    else if (lower.contains("system"))  iconKey = "system";
+    else if (lower.contains("view"))    iconKey = "view";
+    else if (lower.contains("config"))  iconKey = "config";
+    else if (lower.contains("help"))    iconKey = "help";
 
-    setText(emoji.isEmpty() ? text : emoji + "\n" + text);
+    if (!iconKey.isEmpty())
+    {
+        const int iconSize = 26;
+        setIcon(makeMenuIcon(iconKey, QColor(0xd6, 0xda, 0xe4), iconSize));
+        setIconSize(QSize(iconSize, iconSize));
+        setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+    }
+    else
+    {
+        setToolButtonStyle(Qt::ToolButtonTextOnly);
+    }
+
+    setText(text);
     setObjectName("topMenuButton");
-    setToolButtonStyle(Qt::ToolButtonTextOnly);
     setPopupMode(QToolButton::InstantPopup);
     setFocusPolicy(Qt::NoFocus);
     setCursor(Qt::PointingHandCursor);
     setFixedWidth(m_baseWidth);
-    setFixedHeight(48);
+    setFixedHeight(54);
 }
 
 void TopMenuButton::enterEvent(MenuBtnEnterEvent* event)
@@ -116,7 +206,7 @@ TopMenuBar::TopMenuBar(QWidget* parent) : QWidget(parent),
     glowHue(0.58), glowTargetHue(0.58), glowRetargetTicks(0)
 {
     setObjectName("topMenuBar");
-    setFixedHeight(58);
+    setFixedHeight(64);
 
     auto* layout = new QHBoxLayout(this);
     // Extra top margin nudges the row down a bit within the taller bar

@@ -38,6 +38,7 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QRegion>
+#include <QTimer>
 #include <QKeyEvent>
 #include <QMimeData>
 #include <QVector>
@@ -56,6 +57,7 @@
 #include "EmuSettingsDialog.h"
 #include "SettingsHubDialog.h"
 #include "LibraryScreen.h"
+#include "WelcomeDialog.h"
 #include "InputConfig/InputConfigDialog.h"
 #include "VideoSettingsDialog.h"
 #include "CameraSettingsDialog.h"
@@ -818,6 +820,34 @@ MainWindow::MainWindow(int id, EmuInstance* inst, QWidget* parent) :
     onUpdateInterfaceSettings();
 
     updateMPInterface(MPInterface::GetType());
+
+    // First-run welcome: ask for a nickname and a UI language before the
+    // user ever has to go digging through Config for them. Only for the
+    // first window of the first instance, and only once ever (gated by the
+    // "OnboardingDone" flag) - never shown again after that, including for
+    // any extra windows/instances opened later.
+    if (windowID == 0 && emuInstance->instanceID == 0 && !globalCfg.GetBool("OnboardingDone"))
+    {
+        QTimer::singleShot(0, this, [this]()
+        {
+            WelcomeDialog dlg(this);
+            if (dlg.exec() == QDialog::Accepted)
+            {
+                QString name = dlg.chosenName();
+                if (!name.isEmpty())
+                {
+                    auto& cfg = emuInstance->getLocalConfig();
+                    cfg.GetTable("Firmware").SetQString("Username", name);
+                }
+
+                globalCfg.SetQString("Language", dlg.chosenLanguageCode());
+            }
+
+            // Set regardless of accept/cancel - this is a one-time prompt,
+            // not a nag that should keep reappearing.
+            globalCfg.SetBool("OnboardingDone", true);
+        });
+    }
 }
 
 MainWindow::~MainWindow()

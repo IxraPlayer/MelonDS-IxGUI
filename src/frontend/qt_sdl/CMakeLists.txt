@@ -33,6 +33,7 @@ set(SOURCES_QT_SDL
     MPSettingsDialog.cpp
     WifiSettingsDialog.cpp
     InterfaceSettingsDialog.cpp
+    WelcomeDialog.cpp
     ROMInfoDialog.cpp
     RAMInfoDialog.cpp
     TitleManagerDialog.cpp
