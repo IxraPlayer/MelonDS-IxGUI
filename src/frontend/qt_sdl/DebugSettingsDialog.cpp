@@ -20,6 +20,9 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QGroupBox>
+#include <QPushButton>
+#include <QKeyEvent>
+#include <QKeySequence>
 
 #include "types.h"
 #include "Config.h"
@@ -27,7 +30,90 @@
 
 #include "DebugSettingsDialog.h"
 #include "EmuInstance.h"
-#include "InputConfig/MapButton.h"
+
+namespace
+{
+    // Deliberately NOT reusing InputConfig/MapButton.h's KeyMapButton here:
+    // that header also defines JoyMapButton, whose methods call into a full
+    // InputConfigDialog (qobject_cast<InputConfigDialog*>, getJoystick(),
+    // getJoyMutex()) which isn't available/needed on this dialog and would
+    // otherwise force us to drag in InputConfigDialog.h just to satisfy the
+    // compiler. This is a minimal, self-contained keyboard-only capture
+    // button - no joystick binding, since the debug overlay toggle is
+    // keyboard-only by design.
+    class DebugHotkeyButton : public QPushButton
+    {
+    public:
+        explicit DebugHotkeyButton(int* mapping) : QPushButton(), mapping(mapping)
+        {
+            setCheckable(true);
+            setText(mappingText());
+            setFocusPolicy(Qt::StrongFocus);
+            connect(this, &QPushButton::clicked, this, &DebugHotkeyButton::onClick);
+        }
+
+    protected:
+        void keyPressEvent(QKeyEvent* event) override
+        {
+            if (!isChecked()) { QPushButton::keyPressEvent(event); return; }
+
+            int key = event->key();
+            int mod = event->modifiers();
+            bool ismod = (key == Qt::Key_Control || key == Qt::Key_Alt ||
+                          key == Qt::Key_AltGr || key == Qt::Key_Shift ||
+                          key == Qt::Key_Meta);
+
+            if (!mod)
+            {
+                if (key == Qt::Key_Escape) { click(); return; }
+                if (key == Qt::Key_Backspace) { *mapping = -1; click(); return; }
+            }
+
+            // Hotkeys ignore bare modifier presses, same as the regular
+            // hotkey mapping buttons - you bind e.g. Ctrl+D, not Ctrl alone.
+            if (ismod)
+                return;
+
+            *mapping = key | mod;
+            click();
+        }
+
+        void focusOutEvent(QFocusEvent* event) override
+        {
+            if (isChecked())
+                click();
+            QPushButton::focusOutEvent(event);
+        }
+
+        bool focusNextPrevChild(bool) override { return false; }
+
+    private:
+        void onClick()
+        {
+            setText(isChecked() ? "[press key]" : mappingText());
+        }
+
+        QString mappingText() const
+        {
+            int key = *mapping;
+            if (key == -1) return "None";
+
+            switch (key)
+            {
+            case Qt::Key_Control: return "Ctrl";
+            case Qt::Key_Alt:     return "Alt";
+            case Qt::Key_AltGr:   return "AltGr";
+            case Qt::Key_Shift:   return "Shift";
+            case Qt::Key_Meta:    return "Meta";
+            }
+
+            QKeySequence seq(key);
+            return seq.toString(QKeySequence::NativeText).replace("&", "&&");
+        }
+
+        int* mapping;
+    };
+}
 
 DebugSettingsDialog::DebugSettingsDialog(QWidget* parent) : QDialog(parent)
 {
@@ -55,7 +141,7 @@ DebugSettingsDialog::DebugSettingsDialog(QWidget* parent) : QDialog(parent)
     auto* row = new QHBoxLayout();
     row->addWidget(new QLabel(tr("Toggle debug overlay")));
     row->addStretch();
-    auto* keyBtn = new KeyMapButton(&hkKeyMapping, true);
+    auto* keyBtn = new DebugHotkeyButton(&hkKeyMapping);
     row->addWidget(keyBtn);
     groupLayout->addLayout(row);
 
