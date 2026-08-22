@@ -36,11 +36,11 @@ TopMenuButton::TopMenuButton(const QString& text, QWidget* parent) : QToolButton
     // assets. Falls back to no emoji for anything unrecognized.
     QString emoji;
     const QString lower = text.toLower();
-    if (lower.contains("file"))         emoji = QStringLiteral("\xF0\x9F\x93\x81");      // 📁
-    else if (lower.contains("system"))  emoji = QStringLiteral("\xF0\x9F\x92\xBB");      // 💻
-    else if (lower.contains("view"))    emoji = QStringLiteral("\xF0\x9F\x96\xA5\xEF\xB8\x8F"); // 🖥️
-    else if (lower.contains("config"))  emoji = QStringLiteral("\xE2\x9A\x99\xEF\xB8\x8F");     // ⚙️
-    else if (lower.contains("help"))    emoji = QStringLiteral("\xE2\x9D\x93");          // ❓
+    if (lower.contains("file"))         emoji = QString::fromUtf8("\xF0\x9F\x93\x81");             // 📁
+    else if (lower.contains("system"))  emoji = QString::fromUtf8("\xF0\x9F\x92\xBB");             // 💻
+    else if (lower.contains("view"))    emoji = QString::fromUtf8("\xF0\x9F\x96\xA5\xEF\xB8\x8F");  // 🖥️
+    else if (lower.contains("config"))  emoji = QString::fromUtf8("\xE2\x9A\x99\xEF\xB8\x8F");      // ⚙️
+    else if (lower.contains("help"))    emoji = QString::fromUtf8("\xE2\x9D\x93");                  // ❓
 
     setText(emoji.isEmpty() ? text : emoji + "\n" + text);
     setObjectName("topMenuButton");
