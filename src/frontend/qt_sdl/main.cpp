@@ -270,31 +270,6 @@ bool MelonApplication::event(QEvent *event)
     return QApplication::event(event);
 }
 
-TranslucentWindowFilter::TranslucentWindowFilter(QObject* parent) : QObject(parent)
-{
-}
-
-bool TranslucentWindowFilter::eventFilter(QObject* obj, QEvent* event)
-{
-    if (event->type() == QEvent::Show)
-    {
-        QWidget* w = qobject_cast<QWidget*>(obj);
-
-        // Only top-level windows get the glass treatment - pages that get
-        // embedded into a panel (e.g. via SettingsHubDialog::setPage) have
-        // Qt::Widget flags and must stay fully opaque or they'd punch a
-        // transparent hole into whatever embeds them.
-        if (w && w->isWindow() && (w->windowType() == Qt::Dialog || w->windowType() == Qt::Window)
-            && !w->testAttribute(Qt::WA_TranslucentBackground))
-        {
-            w->setAttribute(Qt::WA_TranslucentBackground, true);
-            w->setAttribute(Qt::WA_NoSystemBackground, true);
-        }
-    }
-
-    return QObject::eventFilter(obj, event);
-}
-
 #ifndef _WIN32
 static void signalHandler(int signal)
 {
@@ -356,11 +331,6 @@ int main(int argc, char** argv)
         printf("did you just call me a derp???\n");
 
     MelonApplication melon(argc, argv);
-
-    // See TranslucentWindowFilter: gives every secondary window (settings
-    // dialogs, cheat editor, ROM info, etc) a translucent glass backdrop.
-    auto* translucencyFilter = new TranslucentWindowFilter(&melon);
-    melon.installEventFilter(translucencyFilter);
 
     QString langCode = QLocale::system().name().section('_', 0, 0);
     QString configLang = Config::GetGlobalTable().GetQString("Language");

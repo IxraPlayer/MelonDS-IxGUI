@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <QListWidget>
 #include <QStackedWidget>
+#include <QScrollArea>
 
 class SettingsHubDialog : public QDialog
 {
@@ -28,6 +29,7 @@ private slots:
 private:
     QListWidget* sidebar;
     QStackedWidget* stack;
+    QScrollArea* stackScroll;
     QWidget* placeholder;
 };
 

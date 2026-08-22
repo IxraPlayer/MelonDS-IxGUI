@@ -49,22 +49,6 @@ public:
     bool event(QEvent* event) override;
 };
 
-// Installed application-wide (qApp->installEventFilter). Makes every
-// top-level dialog/window (settings dialogs, cheat editor, ROM info, etc)
-// render with a translucent backdrop, so the semi-transparent QSS
-// background-color values in the theme sheets actually let the desktop
-// show through instead of being flattened to opaque.
-class TranslucentWindowFilter : public QObject
-{
-    Q_OBJECT
-
-public:
-    explicit TranslucentWindowFilter(QObject* parent = nullptr);
-
-protected:
-    bool eventFilter(QObject* obj, QEvent* event) override;
-};
-
 extern QString* systemThemeName;
 extern QString emuDirectory;
 

@@ -3,6 +3,8 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QScreen>
+#include <QGuiApplication>
 
 SettingsHubDialog::SettingsHubDialog(QWidget* parent) : QDialog(parent)
 {
@@ -23,7 +25,7 @@ SettingsHubDialog::SettingsHubDialog(QWidget* parent) : QDialog(parent)
     auto* right = new QVBoxLayout();
     right->setContentsMargins(24, 20, 24, 16);
 
-    stack = new QStackedWidget(this);
+    stack = new QStackedWidget;
 
     placeholder = new QWidget(stack);
     auto* placeholderLayout = new QVBoxLayout(placeholder);
@@ -33,7 +35,16 @@ SettingsHubDialog::SettingsHubDialog(QWidget* parent) : QDialog(parent)
     placeholderLayout->addStretch();
     stack->addWidget(placeholder);
 
-    right->addWidget(stack, 1);
+    // The stack sits inside a scroll area so that a page bigger than what
+    // fits on screen (e.g. the input/hotkeys page) is still fully reachable
+    // by scrolling, instead of forcing the window past the screen edges
+    // where its bottom/right portion becomes unclickable.
+    stackScroll = new QScrollArea(this);
+    stackScroll->setWidgetResizable(true);
+    stackScroll->setFrameShape(QFrame::NoFrame);
+    stackScroll->setWidget(stack);
+
+    right->addWidget(stackScroll, 1);
 
     auto* closeRow = new QHBoxLayout();
     closeRow->addStretch();
@@ -86,7 +97,9 @@ void SettingsHubDialog::setPage(QWidget* page)
     // that, the page gets squeezed into the right-hand panel and everything
     // inside it looks cramped until the user manually enlarges the window.
     // Grow (never shrink below the base minimum) to comfortably fit whatever
-    // page is currently shown.
+    // page is currently shown - but never past the screen's available area,
+    // or part of the window ends up off-screen and unreachable. Anything
+    // that still doesn't fit scrolls within stackScroll instead.
     QSize pageHint = page->sizeHint().expandedTo(page->minimumSizeHint());
 
     const int sidebarWidth = sidebar->width();
@@ -100,6 +113,41 @@ void SettingsHubDialog::setPage(QWidget* page)
     QSize base(680, 480);
     QSize target = base.expandedTo(QSize(neededW, neededH));
 
+    QScreen* onScreen = screen();
+    if (!onScreen)
+        onScreen = QGuiApplication::primaryScreen();
+
+    if (onScreen)
+    {
+        const QRect avail = onScreen->availableGeometry();
+        const int margin = 40;
+        QSize screenCap(avail.width() - margin, avail.height() - margin);
+        target = target.boundedTo(screenCap);
+    }
+
     if (target.width() > width() || target.height() > height())
-        resize(target.expandedTo(size()));
+    {
+        QSize finalSize = target.expandedTo(size()).boundedTo(
+            onScreen ? QSize(onScreen->availableGeometry().width() - 40,
+                              onScreen->availableGeometry().height() - 40)
+                     : target);
+        resize(finalSize);
+    }
+
+    // Keep the whole window inside the visible desktop area after resizing,
+    // in case growing it pushed an edge past the screen bounds.
+    if (onScreen)
+    {
+        const QRect avail = onScreen->availableGeometry();
+        QRect g = geometry();
+        if (g.right() > avail.right())
+            g.moveRight(avail.right());
+        if (g.bottom() > avail.bottom())
+            g.moveBottom(avail.bottom());
+        if (g.left() < avail.left())
+            g.moveLeft(avail.left());
+        if (g.top() < avail.top())
+            g.moveTop(avail.top());
+        setGeometry(g);
+    }
 }

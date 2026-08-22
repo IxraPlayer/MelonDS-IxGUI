@@ -2,7 +2,7 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="tr_TR">
 <context>
-    <name>Window</name>
+    <name>MainWindow</name>
     <message>
         <source>File</source>
         <translation>Dosya</translation>
@@ -86,6 +86,194 @@
     <message>
         <source>Help</source>
         <translation>Yardım</translation>
+    </message>
+    <message>
+        <source>Open ROM inside archive...</source>
+        <translation>Arşiv içinden ROM Aç...</translation>
+    </message>
+    <message>
+        <source>Launch DS menu</source>
+        <translation>DS menüsünü başlat</translation>
+    </message>
+    <message>
+        <source>DS slot: </source>
+        <translation>DS yuvası: </translation>
+    </message>
+    <message>
+        <source>Insert cart...</source>
+        <translation>Kartuş tak...</translation>
+    </message>
+    <message>
+        <source>Eject cart</source>
+        <translation>Kartuşu çıkar</translation>
+    </message>
+    <message>
+        <source>GBA slot: </source>
+        <translation>GBA yuvası: </translation>
+    </message>
+    <message>
+        <source>Insert ROM cart...</source>
+        <translation>ROM kartuşu tak...</translation>
+    </message>
+    <message>
+        <source>Insert add-on cart</source>
+        <translation>Ek kartuş tak</translation>
+    </message>
+    <message>
+        <source>Import savefile</source>
+        <translation>Kayıt dosyası içe aktar</translation>
+    </message>
+    <message>
+        <source>File...</source>
+        <translation>Dosya...</translation>
+    </message>
+    <message>
+        <source>Undo state load</source>
+        <translation>Kayıt yüklemeyi geri al</translation>
+    </message>
+    <message>
+        <source>Open melonDS directory</source>
+        <translation>melonDS klasörünü aç</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>Temizle</translation>
+    </message>
+    <message>
+        <source>Frame step</source>
+        <translation>Kare adımla</translation>
+    </message>
+    <message>
+        <source>Power management</source>
+        <translation>Güç yönetimi</translation>
+    </message>
+    <message>
+        <source>Date and time</source>
+        <translation>Tarih ve saat</translation>
+    </message>
+    <message>
+        <source>Enable cheats</source>
+        <translation>Hileleri etkinleştir</translation>
+    </message>
+    <message>
+        <source>Setup cheat codes</source>
+        <translation>Hile kodlarını ayarla</translation>
+    </message>
+    <message>
+        <source>ROM info</source>
+        <translation>ROM bilgisi</translation>
+    </message>
+    <message>
+        <source>RAM search</source>
+        <translation>RAM arama</translation>
+    </message>
+    <message>
+        <source>Manage DSi titles</source>
+        <translation>DSi başlıklarını yönet</translation>
+    </message>
+    <message>
+        <source>Launch new instance</source>
+        <translation>Yeni örnek başlat</translation>
+    </message>
+    <message>
+        <source>Host LAN game</source>
+        <translation>LAN oyunu barındır</translation>
+    </message>
+    <message>
+        <source>Join LAN game</source>
+        <translation>LAN oyununa katıl</translation>
+    </message>
+    <message>
+        <source>NETPLAY HOST</source>
+        <translation>ÇEVRİMİÇİ SUNUCU</translation>
+    </message>
+    <message>
+        <source>NETPLAY CLIENT</source>
+        <translation>ÇEVRİMİÇİ İSTEMCİ</translation>
+    </message>
+    <message>
+        <source>NETPLAY GO</source>
+        <translation>ÇEVRİMİÇİ BAŞLAT</translation>
+    </message>
+    <message>
+        <source>Swap screens</source>
+        <translation>Ekranları değiştir</translation>
+    </message>
+    <message>
+        <source>Force integer scaling</source>
+        <translation>Tam sayı ölçeklendirmeyi zorla</translation>
+    </message>
+    <message>
+        <source>Open new window</source>
+        <translation>Yeni pencere aç</translation>
+    </message>
+    <message>
+        <source>Screen filtering</source>
+        <translation>Ekran filtreleme</translation>
+    </message>
+    <message>
+        <source>Show OSD</source>
+        <translation>OSD göster</translation>
+    </message>
+    <message>
+        <source>Settings...</source>
+        <translation>Ayarlar...</translation>
+    </message>
+    <message>
+        <source>Emu settings</source>
+        <translation>Emülatör ayarları</translation>
+    </message>
+    <message>
+        <source>Preferences...</source>
+        <translation>Tercihler...</translation>
+    </message>
+    <message>
+        <source>Input and hotkeys</source>
+        <translation>Girdi ve kısayollar</translation>
+    </message>
+    <message>
+        <source>Video settings</source>
+        <translation>Video ayarları</translation>
+    </message>
+    <message>
+        <source>Camera settings</source>
+        <translation>Kamera ayarları</translation>
+    </message>
+    <message>
+        <source>Audio settings</source>
+        <translation>Ses ayarları</translation>
+    </message>
+    <message>
+        <source>Multiplayer settings</source>
+        <translation>Çok oyunculu ayarları</translation>
+    </message>
+    <message>
+        <source>Wifi settings</source>
+        <translation>Wifi ayarları</translation>
+    </message>
+    <message>
+        <source>Firmware settings</source>
+        <translation>Firmware ayarları</translation>
+    </message>
+    <message>
+        <source>Interface settings</source>
+        <translation>Arayüz ayarları</translation>
+    </message>
+    <message>
+        <source>Path settings</source>
+        <translation>Konum ayarları</translation>
+    </message>
+    <message>
+        <source>Limit framerate</source>
+        <translation>Kare hızını sınırla</translation>
+    </message>
+    <message>
+        <source>Audio sync</source>
+        <translation>Ses eşitleme</translation>
+    </message>
+    <message>
+        <source>About...</source>
+        <translation>Hakkında...</translation>
     </message>
 </context>
 <context>
@@ -461,6 +649,61 @@
     <message>
         <source>Configuring settings for instance X</source>
         <translation>X. örnek için ayarlar yapılandırılıyor</translation>
+    </message>
+</context>
+<context>
+    <name>FirmwareSettingsDialog</name>
+    <message>
+        <source>Firmware settings - melonDS</source>
+        <translation>Firmware ayarları - melonDS</translation>
+    </message>
+    <message>
+        <source>Configuring settings for instance X</source>
+        <translation>X. örnek için ayarlar yapılandırılıyor</translation>
+    </message>
+    <message>
+        <source>General</source>
+        <translation>Genel</translation>
+    </message>
+    <message>
+        <source>User settings</source>
+        <translation>Kullanıcı ayarları</translation>
+    </message>
+    <message>
+        <source>Username:</source>
+        <translation>Kullanıcı adı:</translation>
+    </message>
+    <message>
+        <source>Language:</source>
+        <translation>Dil:</translation>
+    </message>
+    <message>
+        <source>Birthday:</source>
+        <translation>Doğum günü:</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>Renk:</translation>
+    </message>
+    <message>
+        <source>Message:</source>
+        <translation>Mesaj:</translation>
+    </message>
+    <message>
+        <source>Network settings</source>
+        <translation>Ağ ayarları</translation>
+    </message>
+    <message>
+        <source>MAC address:</source>
+        <translation>MAC adresi:</translation>
+    </message>
+    <message>
+        <source>(leave empty to use default MAC)</source>
+        <translation>(varsayılan MAC için boş bırakın)</translation>
+    </message>
+    <message>
+        <source>Override settings from external firmware</source>
+        <translation>Harici firmware'deki ayarları geçersiz kıl</translation>
     </message>
 </context>
 <context>
