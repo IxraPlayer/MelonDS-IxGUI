@@ -64,6 +64,14 @@ signals:
 
 private:
     int m_baseWidth = 96;
+    QPropertyAnimation* m_anim = nullptr;
+
+public:
+    // Replaces any in-flight width animation on this button with a new one.
+    // Owns the animation fully (no DeleteWhenStopped) so there is never a
+    // dangling pointer for a caller to stop() twice.
+    void animateWidthTo(int target);
+    ~TopMenuButton() override;
 };
 
 // Centered row of TopMenuButtons. Hovering one animates it wider while its
@@ -83,7 +91,6 @@ private:
     void onHoverChanged(TopMenuButton* btn, bool hovered);
 
     QList<TopMenuButton*> buttons;
-    QList<QPropertyAnimation*> anims;
 };
 
 #endif // TOPMENUBAR_H

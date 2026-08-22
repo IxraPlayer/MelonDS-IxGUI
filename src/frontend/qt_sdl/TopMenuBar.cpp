@@ -66,6 +66,32 @@ void TopMenuButton::mouseReleaseEvent(QMouseEvent* event)
     QToolButton::mouseReleaseEvent(event);
 }
 
+void TopMenuButton::animateWidthTo(int target)
+{
+    // We own this animation outright (no DeleteWhenStopped): stop+delete the
+    // old one synchronously before making a new one, so there is never a
+    // window where a stale/auto-deleted pointer could be touched again.
+    if (m_anim)
+    {
+        m_anim->stop();
+        delete m_anim;
+        m_anim = nullptr;
+    }
+
+    m_anim = new QPropertyAnimation(this, "barWidth", this);
+    m_anim->setDuration(kAnimMs);
+    m_anim->setStartValue(width());
+    m_anim->setEndValue(target);
+    m_anim->setEasingCurve(QEasingCurve::OutCubic);
+    m_anim->start();
+}
+
+TopMenuButton::~TopMenuButton()
+{
+    delete m_anim;
+    m_anim = nullptr;
+}
+
 TopMenuBar::TopMenuBar(QWidget* parent) : QWidget(parent)
 {
     setObjectName("topMenuBar");
@@ -97,10 +123,6 @@ TopMenuButton* TopMenuBar::addMenuButton(const QString& text, QMenu* menu)
 
 void TopMenuBar::onHoverChanged(TopMenuButton* hovered, bool isHover)
 {
-    for (auto* anim : anims)
-        anim->stop();
-    anims.clear();
-
     int shrinkEach = buttons.size() > 1 ? kGrowAmount / (buttons.size() - 1) : 0;
 
     for (auto* btn : buttons)
@@ -114,12 +136,6 @@ void TopMenuBar::onHoverChanged(TopMenuButton* hovered, bool isHover)
                 target = btn->baseWidth() - shrinkEach;
         }
 
-        auto* anim = new QPropertyAnimation(btn, "barWidth", this);
-        anim->setDuration(kAnimMs);
-        anim->setStartValue(btn->width());
-        anim->setEndValue(target);
-        anim->setEasingCurve(QEasingCurve::OutCubic);
-        anims.append(anim);
-        anim->start(QAbstractAnimation::DeleteWhenStopped);
+        btn->animateWidthTo(target);
     }
 }
