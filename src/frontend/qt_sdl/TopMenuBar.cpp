@@ -22,6 +22,15 @@
 #include <QMenu>
 #include <QPropertyAnimation>
 #include <QMouseEvent>
+#include <QPainter>
+#include <QLinearGradient>
+#include <QRandomGenerator>
+
+// Blue-through-turquoise only, same band used elsewhere in the UI: 0.50 =
+// cyan/turquoise, 0.66 = blue. Keeps the glow line from ever drifting into
+// red/green/purple.
+static constexpr double kGlowHueMin = 0.50;
+static constexpr double kGlowHueMax = 0.66;
 
 // growth taken from the hovered button, split evenly and refunded by all
 // its siblings so the row's total width stays constant (nothing overflows
@@ -103,19 +112,70 @@ TopMenuButton::~TopMenuButton()
     m_anim = nullptr;
 }
 
-TopMenuBar::TopMenuBar(QWidget* parent) : QWidget(parent)
+TopMenuBar::TopMenuBar(QWidget* parent) : QWidget(parent),
+    glowHue(0.58), glowTargetHue(0.58), glowRetargetTicks(0)
 {
     setObjectName("topMenuBar");
     setFixedHeight(58);
 
     auto* layout = new QHBoxLayout(this);
     // Extra top margin nudges the row down a bit within the taller bar
-    // instead of sitting flush against the title bar above it.
-    layout->setContentsMargins(0, 8, 0, 4);
+    // instead of sitting flush against the title bar above it. Extra
+    // bottom margin leaves room for the glow line under the buttons.
+    layout->setContentsMargins(0, 8, 0, 6);
     layout->setSpacing(6);
     layout->addStretch(1);
     // buttons get inserted before this trailing stretch by addMenuButton()
     layout->addStretch(1);
+
+    glowTimer = new QTimer(this);
+    connect(glowTimer, &QTimer::timeout, this, [this]()
+    {
+        // Every ~1.8s pick a new random target hue within the band, easing
+        // toward it each tick so the drift reads as smooth rather than a
+        // hard jump.
+        glowRetargetTicks++;
+        if (glowRetargetTicks >= 45)
+        {
+            glowRetargetTicks = 0;
+            double span = kGlowHueMax - kGlowHueMin;
+            glowTargetHue = kGlowHueMin + QRandomGenerator::global()->generateDouble() * span;
+        }
+        glowHue += (glowTargetHue - glowHue) * 0.03;
+
+        update();
+    });
+    glowTimer->start(40);
+}
+
+void TopMenuBar::paintEvent(QPaintEvent* event)
+{
+    QWidget::paintEvent(event);
+
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+
+    QColor lineColor = QColor::fromHsvF(glowHue, 0.70, 0.95);
+
+    const qreal y = height() - 2.0;
+
+    QLinearGradient gradient(0, 0, width(), 0);
+    gradient.setColorAt(0.0, QColor(lineColor.red(), lineColor.green(), lineColor.blue(), 0));
+    gradient.setColorAt(0.5, lineColor);
+    gradient.setColorAt(1.0, QColor(lineColor.red(), lineColor.green(), lineColor.blue(), 0));
+
+    // A few soft passes with falling alpha/width fake a glow without
+    // needing a graphics effect.
+    struct GlowPass { qreal width; qreal alphaScale; };
+    const GlowPass passes[] = { {6.0, 0.25}, {3.0, 0.55}, {1.4, 1.0} };
+    for (const auto& pass : passes)
+    {
+        QPen pen(QBrush(gradient), pass.width);
+        pen.setCapStyle(Qt::FlatCap);
+        painter.setOpacity(pass.alphaScale);
+        painter.setPen(pen);
+        painter.drawLine(QPointF(0, y), QPointF(width(), y));
+    }
 }
 
 TopMenuButton* TopMenuBar::addMenuButton(const QString& text, QMenu* menu)

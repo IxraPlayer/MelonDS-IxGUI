@@ -36,6 +36,8 @@
 #include <QInputDialog>
 #include <QPaintEvent>
 #include <QPainter>
+#include <QPainterPath>
+#include <QRegion>
 #include <QKeyEvent>
 #include <QMimeData>
 #include <QVector>
@@ -2608,10 +2610,32 @@ void MainWindow::toggleFullscreen()
     if (resizeGrips) resizeGrips->updateGeometry();
 }
 
+// The frameless window's real backing rectangle is square; without clipping
+// it to the rounded shape the .qss paints (border-radius: 18 on
+// QMainWindow), the true square corners peek out from behind the painted
+// rounded ones and read as a thin mismatched frame around the whole app.
+// Applying a rounded QRegion mask actually clips the window to that shape
+// instead of just painting over it. Skipped while maximized/fullscreen,
+// where the window fills the screen edge to edge with square corners.
+static void updateFramelessWindowMask(QWidget* window)
+{
+    if (window->isMaximized() || window->isFullScreen())
+    {
+        window->clearMask();
+        return;
+    }
+
+    const int radius = 18;
+    QPainterPath path;
+    path.addRoundedRect(window->rect(), radius, radius);
+    window->setMask(QRegion(path.toFillPolygon().toPolygon()));
+}
+
 void MainWindow::resizeEvent(QResizeEvent* event)
 {
     QMainWindow::resizeEvent(event);
     if (resizeGrips) resizeGrips->updateGeometry();
+    updateFramelessWindowMask(this);
 }
 
 void MainWindow::changeEvent(QEvent* event)
@@ -2621,6 +2645,7 @@ void MainWindow::changeEvent(QEvent* event)
     {
         if (titleBar) titleBar->refreshMaximizeGlyph();
         if (resizeGrips) resizeGrips->updateGeometry();
+        updateFramelessWindowMask(this);
     }
 }
 

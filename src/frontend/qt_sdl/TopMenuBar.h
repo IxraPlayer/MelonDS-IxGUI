@@ -22,6 +22,7 @@
 #include <QWidget>
 #include <QToolButton>
 #include <QList>
+#include <QTimer>
 #include <QtGlobal>
 #if QT_VERSION_MAJOR >= 6
 #include <QEnterEvent>
@@ -87,10 +88,22 @@ public:
     // (MainWindow keeps the QMenuBar alive for actions/shortcuts).
     TopMenuButton* addMenuButton(const QString& text, QMenu* menu);
 
+protected:
+    void paintEvent(QPaintEvent* event) override;
+
 private:
     void onHoverChanged(TopMenuButton* btn, bool hovered);
 
     QList<TopMenuButton*> buttons;
+
+    // Thin animated blue/turquoise glow line along the bottom edge,
+    // separating the menu bar from whatever's below it. Same clamped
+    // hue-walk approach used elsewhere so it drifts without ever turning
+    // red/green/etc.
+    QTimer* glowTimer;
+    double glowHue;
+    double glowTargetHue;
+    int glowRetargetTicks;
 };
 
 #endif // TOPMENUBAR_H
