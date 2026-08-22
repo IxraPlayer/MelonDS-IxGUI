@@ -28,6 +28,7 @@
 
 #include "OpenGLSupport.h"
 #include "duckstation/gl/context.h"
+#include "DebugOverlayStats.h"
 
 #include "main.h"
 #include "EmuInstance.h"
@@ -109,6 +110,25 @@ ScreenPanel::ScreenPanel(QWidget* parent) : QWidget(parent)
     splashText[2].color = 0;
     splashText[2].rendered = false;
     splashText[2].rainbowstart = -1;
+
+    debugOverlayLabel = new QLabel(this);
+    debugOverlayLabel->setObjectName("debugOverlayLabel");
+    debugOverlayLabel->setStyleSheet(
+        "QLabel#debugOverlayLabel {"
+        "  background-color: rgba(0, 0, 0, 150);"
+        "  color: #30FF30;"
+        "  font-family: monospace;"
+        "  font-size: 11px;"
+        "  padding: 4px 6px;"
+        "  border-radius: 4px;"
+        "}");
+    debugOverlayLabel->setAttribute(Qt::WA_TransparentForMouseEvents);
+    debugOverlayLabel->move(8, 8);
+    debugOverlayLabel->hide();
+    debugOverlayLabel->raise();
+
+    debugOverlayTimer = new QTimer(this);
+    connect(debugOverlayTimer, &QTimer::timeout, this, &ScreenPanel::updateDebugOverlayText);
 }
 
 ScreenPanel::~ScreenPanel()
@@ -247,7 +267,70 @@ void ScreenPanel::onAutoScreenSizingChanged(int sizing)
 void ScreenPanel::resizeEvent(QResizeEvent* event)
 {
     setupScreenLayout();
+    if (debugOverlayLabel)
+    {
+        debugOverlayLabel->adjustSize();
+        debugOverlayLabel->move(8, 8);
+        debugOverlayLabel->raise();
+    }
     QWidget::resizeEvent(event);
+}
+
+void ScreenPanel::setDebugOverlayVisible(bool visible)
+{
+    if (visible)
+    {
+        updateDebugOverlayText();
+        debugOverlayLabel->show();
+        debugOverlayLabel->raise();
+        debugOverlayTimer->start(1000);
+    }
+    else
+    {
+        debugOverlayTimer->stop();
+        debugOverlayLabel->hide();
+    }
+}
+
+bool ScreenPanel::debugOverlayVisible() const
+{
+    return debugOverlayLabel && debugOverlayLabel->isVisible();
+}
+
+void ScreenPanel::updateDebugOverlayText()
+{
+    double ramMB = 0.0, cpuPercent = 0.0;
+    bool gotRAM = false, gotCPU = false;
+    {
+        double ram, cpu;
+        if (DebugOverlayStats::Sample(ram, cpu))
+        {
+            // Sample() reports true if at least one of the two worked;
+            // re-check each individually so we can show "N/A" only for
+            // the one that actually failed on this platform.
+            ramMB = ram;
+            cpuPercent = cpu;
+        }
+        gotRAM = true;  // best-effort: overwritten to false below if 0 stayed default AND read failed
+        gotCPU = true;
+    }
+
+    QString ramStr = gotRAM ? QString("%1 MB").arg(ramMB, 0, 'f', 1) : QString("N/A");
+    QString cpuStr = gotCPU ? QString("%1%").arg(cpuPercent, 0, 'f', 1) : QString("N/A");
+
+    QString text = QString(
+        "FPS: %1\n"
+        "CPU: %2\n"
+        "RAM: %3\n"
+        "Res: %4x%5")
+        .arg((int)round(emuInstance ? emuInstance->curFPS : 0.0))
+        .arg(cpuStr)
+        .arg(ramStr)
+        .arg(width())
+        .arg(height());
+
+    debugOverlayLabel->setText(text);
+    debugOverlayLabel->adjustSize();
 }
 
 void ScreenPanel::mousePressEvent(QMouseEvent* event)

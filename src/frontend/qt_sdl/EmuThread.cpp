@@ -158,6 +158,7 @@ void EmuThread::run()
         emuInstance->inputProcess();
 
         if (emuInstance->hotkeyPressed(HK_FrameLimitToggle)) emit windowLimitFPSChange();
+        if (emuInstance->hotkeyPressed(HK_ToggleDebugOverlay)) emuInstance->toggleDebugOverlay();
 
         if (emuInstance->hotkeyPressed(HK_Pause)) emuTogglePause();
         if (emuInstance->hotkeyPressed(HK_Reset)) emuReset();
@@ -413,6 +414,7 @@ void EmuThread::run()
 
                 u32 fps = round(nframes / dt);
                 nframes = 0;
+                emuInstance->measuredFPS = fps;
 
                 float fpstarget = 1.0/frametimeStep;
 

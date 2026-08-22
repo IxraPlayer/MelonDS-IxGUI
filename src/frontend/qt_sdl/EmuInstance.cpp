@@ -343,6 +343,16 @@ void EmuInstance::osdAddMessage(unsigned int color, const char* fmt, ...)
 }
 
 
+void EmuInstance::toggleDebugOverlay()
+{
+    for (int i = 0; i < kMaxWindows; i++)
+    {
+        if (windowList[i])
+            windowList[i]->toggleDebugOverlay();
+    }
+}
+
+
 bool EmuInstance::emuIsActive()
 {
     if (emuThread == nullptr)

@@ -87,6 +87,7 @@ public:
     bool isFocused() { return focused; }
 
     void osdAddMessage(unsigned int color, const char* msg);
+    void toggleDebugOverlay();
 
     // called when the MP interface is changed
     void updateMPInterface(melonDS::MPInterfaceType type);

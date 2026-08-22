@@ -56,6 +56,7 @@ enum
     HK_GuitarGripRed,
     HK_GuitarGripYellow,
     HK_GuitarGripBlue,
+    HK_ToggleDebugOverlay,
     HK_MAX
 };
 
@@ -112,6 +113,11 @@ public:
     void deleteAllWindows();
 
     void osdAddMessage(unsigned int color, const char* fmt, ...);
+
+    // Broadcasts a toggle of the on-screen debug overlay (FPS/CPU/RAM) to
+    // every open window of this instance. Bound to HK_ToggleDebugOverlay,
+    // which the user assigns from Settings > Debug settings.
+    void toggleDebugOverlay();
 
     bool emuIsActive();
     void emuStop(melonDS::Platform::StopReason reason);
@@ -299,6 +305,10 @@ public:
 
     bool doLimitFPS;
     double curFPS;
+    // Actual measured frames-per-second, refreshed roughly every 30
+    // frames by EmuThread - what the debug overlay displays. curFPS
+    // above is the *target*, not what's actually being achieved.
+    double measuredFPS = 0.0;
     double targetFPS;
     double fastForwardFPS;
     double slowmoFPS;

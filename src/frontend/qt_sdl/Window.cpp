@@ -64,6 +64,7 @@
 #include "AudioSettingsDialog.h"
 #include "FirmwareSettingsDialog.h"
 #include "PathSettingsDialog.h"
+#include "DebugSettingsDialog.h"
 #include "MPSettingsDialog.h"
 #include "WifiSettingsDialog.h"
 #include "InterfaceSettingsDialog.h"
@@ -863,6 +864,11 @@ void MainWindow::osdAddMessage(unsigned int color, const char* msg)
 {
     if (!showOSD) return;
     panel->osdAddMessage(color, msg);
+}
+
+void MainWindow::toggleDebugOverlay()
+{
+    panel->setDebugOverlayVisible(!panel->debugOverlayVisible());
 }
 
 void MainWindow::saveEnabled(bool enabled)
@@ -2241,6 +2247,7 @@ void MainWindow::onOpenSettingsHub()
     settingsHub->addCategory(tr("Firmware settings"));
     settingsHub->addCategory(tr("Interface settings"));
     settingsHub->addCategory(tr("Path settings"));
+    settingsHub->addCategory(tr("Debug settings"));
 
     connect(settingsHub, &SettingsHubDialog::categorySelected, this, &MainWindow::onSettingsHubCategory);
 
@@ -2270,6 +2277,7 @@ void MainWindow::onSettingsHubCategory(int index)
         case 7: settingsHub->setPage(new FirmwareSettingsDialog(this)); break;
         case 8: settingsHub->setPage(new InterfaceSettingsDialog(this)); break;
         case 9: settingsHub->setPage(new PathSettingsDialog(this)); break;
+        case 10: settingsHub->setPage(new DebugSettingsDialog(this)); break;
     }
 }
 

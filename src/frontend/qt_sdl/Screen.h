@@ -29,6 +29,7 @@
 #include <QScreen>
 #include <QCloseEvent>
 #include <QTimer>
+#include <QLabel>
 
 #include "glad/glad.h"
 #include "ScreenLayout.h"
@@ -70,13 +71,26 @@ public:
     void osdSetEnabled(bool enabled);
     void osdAddMessage(unsigned int color, const char* msg);
 
+    // Debug overlay (FPS/CPU/RAM), toggled via the hotkey assigned in
+    // Settings > Debug settings. Lives on the base ScreenPanel so both
+    // the native (QPainter) and GL renderers get it identically, as a
+    // plain child QLabel on top of whichever one is active - no need to
+    // touch either renderer's paint/GL code.
+    void setDebugOverlayVisible(bool visible);
+    bool debugOverlayVisible() const;
+
     virtual void drawScreen() {}// = 0;
 
 private slots:
     void onScreenLayoutChanged();
     void onAutoScreenSizingChanged(int sizing);
+    void updateDebugOverlayText();
 
 protected:
+    QLabel* debugOverlayLabel;
+    QTimer* debugOverlayTimer;
+
+
     MainWindow* mainWindow;
     EmuInstance* emuInstance;
 
