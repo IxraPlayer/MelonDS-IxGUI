@@ -42,6 +42,10 @@
 
 class EmuInstance;
 class EmuThread;
+class CustomTitleBar;
+class WindowResizeGrips;
+class TopMenuBar;
+class QToolBar;
 
 const int kMaxRecentROMs = 10;
 
@@ -99,6 +103,9 @@ protected:
 
     void focusInEvent(QFocusEvent* event) override;
     void focusOutEvent(QFocusEvent* event) override;
+
+    void resizeEvent(QResizeEvent* event) override;
+    void changeEvent(QEvent* event) override;
 
 signals:
     void screenLayoutChange();
@@ -234,6 +241,11 @@ private:
 
 public:
     ScreenPanel* panel;
+    CustomTitleBar* titleBar = nullptr;
+    QToolBar* titleBarToolBar = nullptr;
+    WindowResizeGrips* resizeGrips = nullptr;
+    TopMenuBar* topMenuBar = nullptr;
+    QToolBar* topMenuToolBar = nullptr;
     QStackedWidget* centralStack = nullptr;
     LibraryScreen* library = nullptr;
     bool showingLibrary = true;

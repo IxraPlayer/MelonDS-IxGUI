@@ -91,6 +91,7 @@ QPushButton:pressed {
     background-color: #a97bff;
     border: 1px solid #c9b0ff;
     color: #ffffff;
+    padding: 10px 24px 8px 24px;
 }
 
 QPushButton:disabled {
@@ -131,6 +132,7 @@ QToolButton:hover {
 QToolButton:pressed {
     background-color: #a97bff;
     border: 1px solid #c9b0ff;
+    padding: 9px 7px 7px 9px;
 }
 
 QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox {

@@ -82,6 +82,10 @@
 #include "CameraManager.h"
 #include "Window.h"
 #include "AboutDialog.h"
+#include "CustomTitleBar.h"
+#include "TopMenuBar.h"
+#include <QToolBar>
+#include <QWindow>
 
 using namespace melonDS;
 
@@ -233,6 +237,10 @@ MainWindow::MainWindow(int id, EmuInstance* inst, QWidget* parent) :
     setAttribute(Qt::WA_DeleteOnClose);
     setAcceptDrops(true);
     setFocusPolicy(Qt::ClickFocus);
+
+    // Custom title bar: drop the OS decorations and draw our own so the
+    // minimize/maximize/close buttons match the rest of the panel styling.
+    setWindowFlag(Qt::FramelessWindowHint, true);
 
 #if QT_VERSION_MAJOR == 6 && WIN32
     // The "windows11" theme has pretty massive padding around menubar items, this makes Config and Help not fit in a window at 1x screen sizing
@@ -656,10 +664,43 @@ MainWindow::MainWindow(int id, EmuInstance* inst, QWidget* parent) :
         }
 
         setMenuBar(menubar);
+        // The native menu bar stays alive (actions/shortcuts/checked-state
+        // all live on it) but is drawn with zero height -- the visible menu
+        // row is our own TopMenuBar, built from the same QMenus below.
+        menubar->setFixedHeight(0);
 
         if (localCfg.GetString("Firmware.Username") == "Arisotura")
             actMPNewInstance->setText("Fart");
     }
+
+    // Custom title bar (drag to move, min/max/close) + centered, bigger
+    // File/System/View/Config/Help row that grows the hovered entry.
+    titleBar = new CustomTitleBar(this);
+    titleBarToolBar = new QToolBar(this);
+    titleBarToolBar->setObjectName("titleBarToolBar");
+    titleBarToolBar->setMovable(false);
+    titleBarToolBar->setFloatable(false);
+    titleBarToolBar->toggleViewAction()->setVisible(false);
+    titleBarToolBar->addWidget(titleBar);
+    addToolBar(Qt::TopToolBarArea, titleBarToolBar);
+
+    if (hasMenu)
+    {
+        topMenuBar = new TopMenuBar(this);
+        for (QAction* act : menuBar()->actions())
+            topMenuBar->addMenuButton(act->text(), act->menu());
+
+        topMenuToolBar = new QToolBar(this);
+        topMenuToolBar->setObjectName("topMenuToolBar");
+        topMenuToolBar->setMovable(false);
+        topMenuToolBar->setFloatable(false);
+        topMenuToolBar->toggleViewAction()->setVisible(false);
+        topMenuToolBar->addWidget(topMenuBar);
+        addToolBarBreak(Qt::TopToolBarArea);
+        addToolBar(Qt::TopToolBarArea, topMenuToolBar);
+    }
+
+    resizeGrips = new WindowResizeGrips(this);
 
 #ifdef Q_OS_MAC
     QPoint screenCenter = screen()->availableGeometry().center();
@@ -2554,17 +2595,32 @@ void MainWindow::toggleFullscreen()
     if (!isFullScreen())
     {
         showFullScreen();
-        if (hasMenu)
-            menuBar()->setFixedHeight(0); // Don't use hide() as menubar actions stop working
+        if (titleBarToolBar) titleBarToolBar->setVisible(false);
+        if (topMenuToolBar) topMenuToolBar->setVisible(false);
     }
     else
     {
         showNormal();
-        if (hasMenu)
-        {
-            int menuBarHeight = menuBar()->sizeHint().height();
-            menuBar()->setFixedHeight(menuBarHeight);
-        }
+        if (titleBarToolBar) titleBarToolBar->setVisible(true);
+        if (topMenuToolBar) topMenuToolBar->setVisible(true);
+    }
+
+    if (resizeGrips) resizeGrips->updateGeometry();
+}
+
+void MainWindow::resizeEvent(QResizeEvent* event)
+{
+    QMainWindow::resizeEvent(event);
+    if (resizeGrips) resizeGrips->updateGeometry();
+}
+
+void MainWindow::changeEvent(QEvent* event)
+{
+    QMainWindow::changeEvent(event);
+    if (event->type() == QEvent::WindowStateChange)
+    {
+        if (titleBar) titleBar->refreshMaximizeGlyph();
+        if (resizeGrips) resizeGrips->updateGeometry();
     }
 }
 

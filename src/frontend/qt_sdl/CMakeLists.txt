@@ -18,6 +18,8 @@ set(SOURCES_QT_SDL
     EmuSettingsDialog.cpp
     SettingsHubDialog.cpp
     LibraryScreen.cpp
+    CustomTitleBar.cpp
+    TopMenuBar.cpp
     PowerManagement/PowerManagementDialog.cpp
     PowerManagement/resources/battery.qrc
     InputConfig/InputConfigDialog.cpp

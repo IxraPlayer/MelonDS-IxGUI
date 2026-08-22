@@ -11,10 +11,18 @@
 #include <cstddef>
 
 #include "NDS_Header.h"
+#include <QRandomGenerator>
 
 using namespace melonDS;
 
-LibraryScreen::LibraryScreen(QWidget* parent) : QWidget(parent), columns(5), bgHue(0.58)
+// Blue-through-turquoise only: 0.50 = cyan/turquoise, 0.66 = blue. The
+// border color randomly walks inside this band so it never turns red,
+// green, purple, etc -- it just keeps shifting between the two tones.
+static constexpr double kBorderHueMin = 0.50;
+static constexpr double kBorderHueMax = 0.66;
+
+LibraryScreen::LibraryScreen(QWidget* parent) : QWidget(parent), columns(5), bgHue(0.58),
+    borderHue(0.58), borderTargetHue(0.58), borderRetargetTicks(0)
 {
     setObjectName("libraryScreen");
 
@@ -27,6 +35,19 @@ LibraryScreen::LibraryScreen(QWidget* parent) : QWidget(parent), columns(5), bgH
         bgHue += 0.00035;
         if (bgHue >= 1.0)
             bgHue -= 1.0;
+
+        // Every ~1.8s, pick a new random target hue within the blue/
+        // turquoise band; ease borderHue toward it each tick so the color
+        // change reads as a smooth random drift rather than a hard jump.
+        borderRetargetTicks++;
+        if (borderRetargetTicks >= 45)
+        {
+            borderRetargetTicks = 0;
+            double span = kBorderHueMax - kBorderHueMin;
+            borderTargetHue = kBorderHueMin + QRandomGenerator::global()->generateDouble() * span;
+        }
+        borderHue += (borderTargetHue - borderHue) * 0.03;
+
         update();
     });
     bgAnimTimer->start(40);
@@ -74,6 +95,26 @@ void LibraryScreen::paintEvent(QPaintEvent* event)
     gradient.setColorAt(1.0, bottomRight);
 
     painter.fillRect(rect(), gradient);
+
+    // Animated blue/turquoise frame around the whole games panel: a few
+    // concentric rounded strokes with falling alpha to fake a soft glow
+    // without needing a graphics effect.
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    QColor frameColor = QColor::fromHsvF(borderHue, 0.70, 0.95);
+
+    QRectF frameRect = rect().adjusted(2, 2, -2, -2);
+    struct GlowPass { qreal width; int alpha; };
+    const GlowPass passes[] = { {9.0, 35}, {5.0, 80}, {2.0, 220} };
+    for (const auto& pass : passes)
+    {
+        QColor c = frameColor;
+        c.setAlpha(pass.alpha);
+        QPen pen(c, pass.width);
+        pen.setJoinStyle(Qt::RoundJoin);
+        painter.setPen(pen);
+        painter.setBrush(Qt::NoBrush);
+        painter.drawRoundedRect(frameRect, 16, 16);
+    }
 
     QWidget::paintEvent(event);
 }

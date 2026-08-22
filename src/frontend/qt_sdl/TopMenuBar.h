@@ -1,0 +1,89 @@
+/*
+    Copyright 2016-2026 melonDS team
+
+    This file is part of melonDS.
+
+    melonDS is free software: you can redistribute it and/or modify it under
+    the terms of the GNU General Public License as published by the Free
+    Software Foundation, either version 3 of the License, or (at your option)
+    any later version.
+
+    melonDS is distributed in the hope that it will be useful, but WITHOUT ANY
+    WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+    FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with melonDS. If not, see http://www.gnu.org/licenses/.
+*/
+
+#ifndef TOPMENUBAR_H
+#define TOPMENUBAR_H
+
+#include <QWidget>
+#include <QToolButton>
+#include <QList>
+#include <QtGlobal>
+#if QT_VERSION_MAJOR >= 6
+#include <QEnterEvent>
+#endif
+
+class QMenu;
+class QPropertyAnimation;
+
+#if QT_VERSION_MAJOR >= 6
+using MenuBtnEnterEvent = QEnterEvent;
+#else
+using MenuBtnEnterEvent = QEvent;
+#endif
+
+// A single top-bar menu button (File/System/View/Config/Help). Its width is
+// an animatable Qt property so TopMenuBar can grow the hovered button and
+// shrink its neighbours to make room for it.
+class TopMenuButton : public QToolButton
+{
+    Q_OBJECT
+    Q_PROPERTY(int barWidth READ barWidth WRITE setBarWidth)
+
+public:
+    explicit TopMenuButton(const QString& text, QWidget* parent = nullptr);
+
+    int barWidth() const { return width(); }
+    void setBarWidth(int w) { setFixedWidth(w); }
+
+    int baseWidth() const { return m_baseWidth; }
+    void setBaseWidth(int w) { m_baseWidth = w; }
+
+protected:
+    void enterEvent(MenuBtnEnterEvent* event) override;
+    void leaveEvent(QEvent* event) override;
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
+
+signals:
+    void hoverChanged(TopMenuButton* self, bool hovered);
+
+private:
+    int m_baseWidth = 96;
+};
+
+// Centered row of TopMenuButtons. Hovering one animates it wider while its
+// siblings animate narrower (still readable, just compact) so the whole row
+// keeps its total footprint centered at the top of the window.
+class TopMenuBar : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit TopMenuBar(QWidget* parent = nullptr);
+
+    // Takes ownership-by-reference: menu stays owned by whoever created it
+    // (MainWindow keeps the QMenuBar alive for actions/shortcuts).
+    TopMenuButton* addMenuButton(const QString& text, QMenu* menu);
+
+private:
+    void onHoverChanged(TopMenuButton* btn, bool hovered);
+
+    QList<TopMenuButton*> buttons;
+    QList<QPropertyAnimation*> anims;
+};
+
+#endif // TOPMENUBAR_H

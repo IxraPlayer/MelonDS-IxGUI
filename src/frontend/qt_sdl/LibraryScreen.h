@@ -50,6 +50,13 @@ private:
     // old flat launcher background.
     QTimer* bgAnimTimer;
     double bgHue;
+
+    // Animated frame drawn around the whole games panel. The color keeps
+    // randomly walking, but is clamped to the blue/turquoise range only
+    // (never drifts into red/green/etc).
+    double borderHue;
+    double borderTargetHue;
+    int borderRetargetTicks;
 };
 
 #endif

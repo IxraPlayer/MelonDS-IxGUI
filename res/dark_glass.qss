@@ -91,6 +91,7 @@ QPushButton:pressed {
     background-color: #6c85ff;
     border: 1px solid #8fa0ff;
     color: #ffffff;
+    padding: 10px 24px 8px 24px;
 }
 
 QPushButton:disabled {
@@ -131,6 +132,7 @@ QToolButton:hover {
 QToolButton:pressed {
     background-color: #6c85ff;
     border: 1px solid #8fa0ff;
+    padding: 9px 7px 7px 9px;
 }
 
 QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox {
@@ -391,6 +393,7 @@ QProgressBar::chunk {
 #gameCard:pressed {
     background-color: #262b3c;
     border: 1px solid #6c85ff;
+    padding-top: 10px;
 }
 
 #gameCardTitle {
@@ -423,6 +426,69 @@ QProgressBar::chunk {
     border: 2px solid #6c85ff;
     color: #6c85ff;
     background-color: #1e2130;
+}
+
+#titleBarToolBar, #topMenuToolBar, QToolBar {
+    background: transparent;
+    border: none;
+    spacing: 0px;
+    padding: 0px;
+    margin: 0px;
+}
+
+#customTitleBar {
+    background-color: #0e1016;
+    border-bottom: 1px solid #1c1f27;
+}
+
+#titleBarLabel {
+    color: #9aa0ad;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+#titleBarButton {
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+}
+
+#titleBarCloseButton {
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+}
+
+#topMenuBar {
+    background-color: #101218;
+    border-bottom: 1px solid #1c1f27;
+}
+
+#topMenuButton {
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #b7bcc8;
+    padding: 6px 4px 4px 4px;
+}
+
+#topMenuButton:hover {
+    background-color: #1c2030;
+    border: 1px solid #3d5afe;
+    color: #ffffff;
+}
+
+#topMenuButton:pressed {
+    background-color: #262b3c;
+    border: 1px solid #6c85ff;
+    padding: 7px 4px 3px 4px;
+}
+
+#topMenuButton::menu-indicator {
+    image: none;
+    width: 0px;
 }
 
 #playButton {
