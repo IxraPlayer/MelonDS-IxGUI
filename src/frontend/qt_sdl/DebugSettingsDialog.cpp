@@ -23,6 +23,7 @@
 #include <QPushButton>
 #include <QKeyEvent>
 #include <QKeySequence>
+#include <functional>
 
 #include "types.h"
 #include "Config.h"
@@ -44,7 +45,12 @@ namespace
     class DebugHotkeyButton : public QPushButton
     {
     public:
-        explicit DebugHotkeyButton(int* mapping) : QPushButton(), mapping(mapping)
+        // onChanged is invoked right after a key (or Backspace-clear) is
+        // captured, so the binding is persisted immediately - this page
+        // has no OK/Cancel button box, so QDialog::done() never fires and
+        // can't be relied on to save.
+        DebugHotkeyButton(int* mapping, std::function<void()> onChanged)
+            : QPushButton(), mapping(mapping), onChanged(onChanged)
         {
             setCheckable(true);
             setText(mappingText());
@@ -66,7 +72,7 @@ namespace
             if (!mod)
             {
                 if (key == Qt::Key_Escape) { click(); return; }
-                if (key == Qt::Key_Backspace) { *mapping = -1; click(); return; }
+                if (key == Qt::Key_Backspace) { *mapping = -1; click(); if (onChanged) onChanged(); return; }
             }
 
             // Hotkeys ignore bare modifier presses, same as the regular
@@ -76,6 +82,7 @@ namespace
 
             *mapping = key | mod;
             click();
+            if (onChanged) onChanged();
         }
 
         void focusOutEvent(QFocusEvent* event) override
@@ -112,6 +119,7 @@ namespace
         }
 
         int* mapping;
+        std::function<void()> onChanged;
     };
 }
 
@@ -141,7 +149,15 @@ DebugSettingsDialog::DebugSettingsDialog(QWidget* parent) : QDialog(parent)
     auto* row = new QHBoxLayout();
     row->addWidget(new QLabel(tr("Toggle debug overlay")));
     row->addStretch();
-    auto* keyBtn = new DebugHotkeyButton(&hkKeyMapping);
+    auto* keyBtn = new DebugHotkeyButton(&hkKeyMapping, [this]()
+    {
+        // Persist + apply immediately - see DebugHotkeyButton comment above
+        // for why we can't wait for done().
+        Config::Table& cfg = emuInstance->getLocalConfig();
+        Config::Table kcfg = cfg.GetTable("Keyboard");
+        kcfg.SetInt(EmuInstance::hotkeyNames[HK_ToggleDebugOverlay], hkKeyMapping);
+        emuInstance->inputLoadConfig();
+    });
     row->addWidget(keyBtn);
     groupLayout->addLayout(row);
 
@@ -155,15 +171,9 @@ DebugSettingsDialog::~DebugSettingsDialog()
 
 void DebugSettingsDialog::done(int r)
 {
-    // Same behavior regardless of Ok/Cancel/close-button: this is a live
-    // hotkey binding, not a form with a "discard changes" concept, so we
-    // always persist it - consistent with how the rest of the hotkeys
-    // (Input and hotkeys tab) work.
-    Config::Table& instcfg = emuInstance->getLocalConfig();
-    Config::Table keycfg = instcfg.GetTable("Keyboard");
-    keycfg.SetInt(EmuInstance::hotkeyNames[HK_ToggleDebugOverlay], hkKeyMapping);
-
-    emuInstance->inputLoadConfig();
-
+    // Kept as a harmless no-op safety net - the actual save now happens
+    // immediately when the key is captured (see DebugHotkeyButton's
+    // onChanged callback above), since this embedded page has no
+    // OK/Cancel button box and done() is never invoked in practice.
     QDialog::done(r);
 }
