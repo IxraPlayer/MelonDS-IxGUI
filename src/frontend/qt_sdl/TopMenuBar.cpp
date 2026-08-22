@@ -27,6 +27,7 @@
 #include <QLinearGradient>
 #include <QRandomGenerator>
 #include <QPixmap>
+#include <QResizeEvent>
 #include <cmath>
 
 #ifndef M_PI
@@ -236,6 +237,29 @@ TopMenuBar::TopMenuBar(QWidget* parent) : QWidget(parent),
         update();
     });
     glowTimer->start(40);
+
+    // Small collapse arrow, bottom-right corner of the bar. Lets the
+    // player fold this whole menu row away during gameplay without going
+    // through a settings screen, and bring it back the same way (see
+    // MainWindow's floating restore button for the other half of this).
+    collapseBtn = new QToolButton(this);
+    collapseBtn->setText(QString::fromUtf8("\xE2\x96\xBE")); // ▾
+    collapseBtn->setToolTip(tr("Hide menu"));
+    collapseBtn->setCursor(Qt::PointingHandCursor);
+    collapseBtn->setFocusPolicy(Qt::NoFocus);
+    collapseBtn->setFixedSize(22, 18);
+    collapseBtn->setStyleSheet(
+        "QToolButton { background: rgba(255,255,255,20); border: none; "
+        "border-radius: 4px; color: #b8bcc8; font-size: 10px; }"
+        "QToolButton:hover { background: rgba(255,255,255,45); color: white; }");
+    connect(collapseBtn, &QToolButton::clicked, this, &TopMenuBar::collapseClicked);
+}
+
+void TopMenuBar::resizeEvent(QResizeEvent* event)
+{
+    QWidget::resizeEvent(event);
+    if (collapseBtn)
+        collapseBtn->move(width() - collapseBtn->width() - 6, height() - collapseBtn->height() - 8);
 }
 
 void TopMenuBar::paintEvent(QPaintEvent* event)

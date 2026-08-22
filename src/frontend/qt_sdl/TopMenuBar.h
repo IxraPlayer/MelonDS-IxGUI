@@ -88,13 +88,23 @@ public:
     // (MainWindow keeps the QMenuBar alive for actions/shortcuts).
     TopMenuButton* addMenuButton(const QString& text, QMenu* menu);
 
+signals:
+    // Emitted when the small collapse arrow (bottom-right corner of the
+    // bar) is clicked. MainWindow owns the actual hide/show of the
+    // enclosing toolbar plus the floating "restore" button that appears
+    // in its place - this widget only reports the click.
+    void collapseClicked();
+
 protected:
     void paintEvent(QPaintEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     void onHoverChanged(TopMenuButton* btn, bool hovered);
 
     QList<TopMenuButton*> buttons;
+
+    QToolButton* collapseBtn;
 
     // Thin animated blue/turquoise glow line along the bottom edge,
     // separating the menu bar from whatever's below it. Same clamped

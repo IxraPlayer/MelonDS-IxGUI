@@ -703,6 +703,36 @@ MainWindow::MainWindow(int id, EmuInstance* inst, QWidget* parent) :
         topMenuToolBar->addWidget(topMenuBar);
         addToolBarBreak(Qt::TopToolBarArea);
         addToolBar(Qt::TopToolBarArea, topMenuToolBar);
+
+        // Floating "bring the menu back" arrow. Lives directly on the
+        // window (not in a toolbar/layout) since it only needs to exist
+        // while topMenuToolBar is hidden, floating over whatever's
+        // underneath at the top-right corner.
+        topMenuRestoreBtn = new QToolButton(this);
+        topMenuRestoreBtn->setText(QString::fromUtf8("\xE2\x96\xBC")); // ▼
+        topMenuRestoreBtn->setToolTip(tr("Show menu"));
+        topMenuRestoreBtn->setCursor(Qt::PointingHandCursor);
+        topMenuRestoreBtn->setFocusPolicy(Qt::NoFocus);
+        topMenuRestoreBtn->setFixedSize(28, 20);
+        topMenuRestoreBtn->setStyleSheet(
+            "QToolButton { background: rgba(0,0,0,140); border: none; "
+            "border-radius: 4px; color: #d6dae4; font-size: 11px; }"
+            "QToolButton:hover { background: rgba(0,0,0,190); color: white; }");
+        topMenuRestoreBtn->hide();
+
+        connect(topMenuBar, &TopMenuBar::collapseClicked, this, [this]()
+        {
+            topMenuToolBar->hide();
+            positionTopMenuRestoreBtn();
+            topMenuRestoreBtn->show();
+            topMenuRestoreBtn->raise();
+        });
+
+        connect(topMenuRestoreBtn, &QToolButton::clicked, this, [this]()
+        {
+            topMenuToolBar->show();
+            topMenuRestoreBtn->hide();
+        });
     }
 
     resizeGrips = new WindowResizeGrips(this);
@@ -2674,6 +2704,17 @@ void MainWindow::resizeEvent(QResizeEvent* event)
     QMainWindow::resizeEvent(event);
     if (resizeGrips) resizeGrips->updateGeometry();
     updateFramelessWindowMask(this);
+    positionTopMenuRestoreBtn();
+}
+
+void MainWindow::positionTopMenuRestoreBtn()
+{
+    if (!topMenuRestoreBtn) return;
+
+    // Top-right corner of the window, just under the title bar - clear of
+    // the min/max/close buttons which live in CustomTitleBar to its left.
+    int margin = 8;
+    topMenuRestoreBtn->move(width() - topMenuRestoreBtn->width() - margin, margin + 2);
 }
 
 void MainWindow::changeEvent(QEvent* event)

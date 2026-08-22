@@ -33,6 +33,7 @@
 #include <QMutex>
 #include <QScreen>
 #include <QCloseEvent>
+#include <QToolButton>
 
 #include "Screen.h"
 #include "LibraryScreen.h"
@@ -247,6 +248,12 @@ public:
     WindowResizeGrips* resizeGrips = nullptr;
     TopMenuBar* topMenuBar = nullptr;
     QToolBar* topMenuToolBar = nullptr;
+
+    // Small floating "bring the menu back" arrow, shown in the top-right
+    // corner only while topMenuToolBar is hidden (see TopMenuBar's
+    // collapseClicked() / onTopMenuCollapseClicked() below).
+    QToolButton* topMenuRestoreBtn = nullptr;
+    void positionTopMenuRestoreBtn();
     QStackedWidget* centralStack = nullptr;
     LibraryScreen* library = nullptr;
     bool showingLibrary = true;
