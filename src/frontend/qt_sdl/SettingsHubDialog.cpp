@@ -134,20 +134,14 @@ void SettingsHubDialog::setPage(QWidget* page)
         resize(finalSize);
     }
 
-    // Keep the whole window inside the visible desktop area after resizing,
-    // in case growing it pushed an edge past the screen bounds.
+    // Re-center the window on its screen after resizing, so switching
+    // categories keeps the dialog anchored around the same middle point
+    // instead of drifting toward whichever edge it happened to clamp to.
     if (onScreen)
     {
         const QRect avail = onScreen->availableGeometry();
         QRect g = geometry();
-        if (g.right() > avail.right())
-            g.moveRight(avail.right());
-        if (g.bottom() > avail.bottom())
-            g.moveBottom(avail.bottom());
-        if (g.left() < avail.left())
-            g.moveLeft(avail.left());
-        if (g.top() < avail.top())
-            g.moveTop(avail.top());
+        g.moveCenter(avail.center());
         setGeometry(g);
     }
 }

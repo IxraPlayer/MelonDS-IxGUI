@@ -11,7 +11,16 @@
 #include <cstddef>
 
 #include "NDS_Header.h"
-#include <QRandomGenerator>
+#include <QMouseEvent>
+#include <QDropEvent>
+#include <QDragMoveEvent>
+#include <QMimeData>
+#include <QDrag>
+#include <QApplication>
+
+// MIME type used to carry the dragged tile's ROM path during a
+// press-and-drag reorder within the library grid.
+static const char* kGameDragMime = "application/x-melonds-game-path";
 
 using namespace melonDS;
 
@@ -41,7 +50,113 @@ LibraryScreen::LibraryScreen(QWidget* parent) : QWidget(parent), columns(5), bgH
     addTile->setToolButtonStyle(Qt::ToolButtonTextOnly);
     connect(addTile, &QToolButton::clicked, this, &LibraryScreen::addGameRequested);
 
+    // The add-tile is a valid drop target (dropping a game onto it moves
+    // that game to the end of the library) but is never itself draggable,
+    // since it has no "romPath" property set.
+    addTile->setAcceptDrops(true);
+    addTile->installEventFilter(this);
+
     grid->addWidget(addTile, 0, 0);
+}
+
+bool LibraryScreen::eventFilter(QObject* watched, QEvent* event)
+{
+    QToolButton* tile = qobject_cast<QToolButton*>(watched);
+    if (!tile)
+        return QWidget::eventFilter(watched, event);
+
+    switch (event->type())
+    {
+        case QEvent::MouseButtonPress:
+        {
+            auto* me = static_cast<QMouseEvent*>(event);
+            if (me->button() == Qt::LeftButton && tile->property("romPath").isValid())
+            {
+                dragStartPos = me->pos();
+                dragCandidate = tile;
+            }
+            break;
+        }
+
+        case QEvent::MouseMove:
+        {
+            auto* me = static_cast<QMouseEvent*>(event);
+            if (dragCandidate == tile && (me->buttons() & Qt::LeftButton) &&
+                (me->pos() - dragStartPos).manhattanLength() >= QApplication::startDragDistance())
+            {
+                QString path = tile->property("romPath").toString();
+                dragCandidate = nullptr;
+
+                auto* mime = new QMimeData();
+                mime->setData(kGameDragMime, path.toUtf8());
+
+                auto* drag = new QDrag(tile);
+                drag->setMimeData(mime);
+                if (!tile->icon().isNull())
+                    drag->setPixmap(tile->icon().pixmap(64, 64));
+                drag->setHotSpot(QPoint(32, 32));
+
+                // Blocks until the user drops or cancels; the actual reorder
+                // happens in the Drop case below, delivered to whichever
+                // tile the cursor was released over.
+                drag->exec(Qt::MoveAction);
+
+                // The button never saw its matching mouseRelease (QDrag
+                // grabbed the mouse for the duration), so without this it's
+                // left thinking it's still held down after the drop.
+                tile->setDown(false);
+                return true;
+            }
+            break;
+        }
+
+        case QEvent::MouseButtonRelease:
+            dragCandidate = nullptr;
+            break;
+
+        case QEvent::DragEnter:
+        case QEvent::DragMove:
+        {
+            auto* de = static_cast<QDragMoveEvent*>(event);
+            if (de->mimeData()->hasFormat(kGameDragMime))
+            {
+                de->acceptProposedAction();
+                return true;
+            }
+            break;
+        }
+
+        case QEvent::Drop:
+        {
+            auto* de = static_cast<QDropEvent*>(event);
+            if (de->mimeData()->hasFormat(kGameDragMime))
+            {
+                QString sourcePath = QString::fromUtf8(de->mimeData()->data(kGameDragMime));
+                // Empty when dropped on the "+" tile, which means "move to
+                // the end of the library" rather than swap with a game.
+                QString targetPath = tile->property("romPath").toString();
+
+                if (sourcePath != targetPath && paths.contains(sourcePath))
+                {
+                    paths.removeAll(sourcePath);
+                    int insertIndex = targetPath.isEmpty() ? paths.size() : paths.indexOf(targetPath);
+                    if (insertIndex < 0)
+                        insertIndex = paths.size();
+                    paths.insert(insertIndex, sourcePath);
+                    relayout();
+                    emit libraryChanged();
+                }
+                de->acceptProposedAction();
+                return true;
+            }
+            break;
+        }
+
+        default:
+            break;
+    }
+
+    return QWidget::eventFilter(watched, event);
 }
 
 void LibraryScreen::paintEvent(QPaintEvent* event)
@@ -137,6 +252,13 @@ void LibraryScreen::addGame(const QString& path)
     tile->setFixedSize(140, 140);
     tile->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
     tile->setContextMenuPolicy(Qt::CustomContextMenu);
+
+    // Enables press-and-drag reordering: the "romPath" property marks this
+    // tile as a valid drag source (see eventFilter), and setAcceptDrops
+    // makes it a valid drop target for other tiles being dragged onto it.
+    tile->setProperty("romPath", path);
+    tile->setAcceptDrops(true);
+    tile->installEventFilter(this);
 
     QImage iconImg = loadRomIconImage(path);
     if (!iconImg.isNull())

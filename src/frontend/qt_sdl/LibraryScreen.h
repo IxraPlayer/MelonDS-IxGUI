@@ -35,6 +35,12 @@ signals:
 protected:
     void paintEvent(QPaintEvent* event) override;
 
+    // Watches every tile (including the "+" add-tile) to implement
+    // press-and-drag reordering: press-drag past the OS drag threshold
+    // starts a QDrag carrying the source ROM path, and dropping it onto
+    // another tile reorders the library list around that drop target.
+    bool eventFilter(QObject* watched, QEvent* event) override;
+
 private:
     void relayout();
     QString displayName(const QString& path) const;
@@ -44,6 +50,11 @@ private:
     QStringList paths;
     QMap<QString, QToolButton*> tiles;
     int columns;
+
+    // Drag-reorder tracking: which tile the current press started on, and
+    // where, so mouseMove can tell a click apart from a drag.
+    QToolButton* dragCandidate = nullptr;
+    QPoint dragStartPos;
 
     double bgHue;
 };
